@@ -1,0 +1,2 @@
+model_checkpoint_path: "CNN-PPO-3-1"
+all_model_checkpoint_paths: "CNN-PPO-3-1"

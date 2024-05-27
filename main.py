@@ -10,10 +10,15 @@ import math
 from decimal import Decimal
 import matplotlib.pyplot as plt
 from agents.ornstein_uhlenbeck import OrnsteinUhlenbeckActionNoise
+import csv
+import os
 
 eps=10e-8
 epochs=0
 M=0
+
+# Create the necessary directories
+os.makedirs('./saved_network/PPO', exist_ok=True)
 
 class StockTrader():
     def __init__(self):
@@ -50,6 +55,7 @@ class StockTrader():
         w_history = pd.Series(self.w_history)
         p_history = pd.Series(self.p_history)
         history = pd.concat([wealth_history, r_history, w_history, p_history], axis=1)
+        history.columns = ['Wealth', 'Return', 'Weight', 'Price']
         history.to_csv('result' + str(epoch) + '-' + str(math.exp(np.sum(self.r_history)) * 100) + '.csv')
 
     def print_result(self,epoch,agent):
@@ -70,15 +76,31 @@ class StockTrader():
 def parse_info(info):
     return info['reward'],info['continue'],info[ 'next state'],info['weight vector'],info ['price'],info['risk']
 
+def save_state_actions(filename, states, actions):
+    """
+    Save the states and actions to a csv file
+    """
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['State', 'Action'])
+        for state, action in zip(states, actions):
+            writer.writerow([state, action])
 
 def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable):
     info = env.step(None,None)
     r,contin,s,w1,p,risk=parse_info(info)
     contin=1
+    states = []
+    actions = []
     while contin:
         w2 = agent.predict(s)
+
+        states.append(s)
+        actions.append(w2)
+
         if noise_flag=='True':
             w2=stocktrader.action_processor(w2,(epochs-epoch)/epochs)
+
         env_info = env.step(w1, w2)
         r, contin, s_next, w1, p,risk = parse_info(env_info)
 
@@ -101,6 +123,7 @@ def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
 
         stocktrader.update_summary(loss,r,q_value,actor_loss,w2,p)
         s = s_next
+    save_state_actions(f"state_action_recopilation.csv", states, actions)
 
 
 

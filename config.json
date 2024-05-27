@@ -11,7 +11,7 @@
 		"market_types":"America",
 	    "codes":["AAPL","ADBE","BABA","SNE","V"],
 		"features":["close"],
-		"agents":["CNN","DDPG","3"],
+		"agents":["CNN","PPO","3"],
 		"epochs":"10000",
 		"noise_flag":"False",
 		"record_flag":"False",
