@@ -94,6 +94,7 @@ def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
     actions = []
     while contin:
         w2 = agent.predict(s)
+        print(s.shape,w2.shape)
 
         states.append(s)
         actions.append(w2)
