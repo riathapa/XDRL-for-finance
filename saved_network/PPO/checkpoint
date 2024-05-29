@@ -1,4 +1,4 @@
-model_checkpoint_path: "CNN-PPO-3-50"
-all_model_checkpoint_paths: "CNN-PPO-3-48"
-all_model_checkpoint_paths: "CNN-PPO-3-49"
-all_model_checkpoint_paths: "CNN-PPO-3-50"
+model_checkpoint_path: "CNN-PPO-3-7"
+all_model_checkpoint_paths: "CNN-PPO-3-5"
+all_model_checkpoint_paths: "CNN-PPO-3-6"
+all_model_checkpoint_paths: "CNN-PPO-3-7"
