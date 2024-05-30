@@ -3,9 +3,6 @@ import matplotlib.pyplot as plt
 import json
 import seaborn as sns
 
-def save_plt_as_png(plt, file_path):
-    plt.savefig(file_path)
-    plt.close()
 
 def plot_action_over_time(df, action_columns,config_file):
     # Load the config file
@@ -26,9 +23,8 @@ def plot_action_over_time(df, action_columns,config_file):
         axs[i].set_ylabel('Action Value')
         axs[i].legend()
     plt.tight_layout()
+    plt.savefig('plots\Action_over_time.png')
     plt.show()
-
-    save_plt_as_png(plt, 'plots\Action_over_time.png')
 
     # Plot all smoothed actions together
     fig, ax = plt.subplots(figsize=(14, 7))
@@ -38,9 +34,8 @@ def plot_action_over_time(df, action_columns,config_file):
     ax.set_xlabel('Time Step')
     ax.set_ylabel('Action Value')
     ax.legend()
+    plt.savefig('plots\Smoothed_action_over_time.png')
     plt.show()
-
-    save_plt_as_png(plt, 'plots\smoothed_actions.png')
 
 
 def plot_waterfall(data, title):
@@ -67,18 +62,17 @@ def plot_waterfall(data, title):
     ax.set_ylabel('Return')
     # Legend with Negative red and Positive green
     ax.legend(['Negative Return', 'Positive Return'], loc='upper right')
+    plt.savefig('plots\waterfallCum.png')
     plt.show()
-
-    save_plt_as_png(plt, 'plots\waterfallCum.png')
 
     fig, ax = plt.subplots(figsize=(14, 7))
     ax.bar(range(len(data)), data, color=(data > 0).map({True: 'g', False: 'r'}))
     ax.set_title(title)
     ax.set_xlabel('Time Step')
     ax.set_ylabel('Return')
+    plt.savefig('plots\waterfall.png')
     plt.show()
 
-    save_plt_as_png(plt, 'plots\waterfall.png')
 
 def plot_asset_prices(df, price_columns,config_file):
     # Load the config file
@@ -97,9 +91,8 @@ def plot_asset_prices(df, price_columns,config_file):
         axs[i].set_xlabel('Time Step')
         axs[i].set_ylabel('Price')
     plt.tight_layout()
+    plt.savefig('plots\Asset_prices.png')
     plt.show()
-
-    save_plt_as_png(plt, 'plots\Asset_prices.png')
 
 def plot_correlation_states(df, state_columns):
     # Correlation Matrix of States
@@ -107,9 +100,9 @@ def plot_correlation_states(df, state_columns):
     corr_matrix = df[state_columns].corr()
     sns.heatmap(corr_matrix, annot=True, fmt='.2f', cmap='coolwarm')
     plt.title('Correlation Matrix of States')
+    plt.savefig('plots\correlation_states.png')
     plt.show()
 
-    save_plt_as_png(plt, 'plots\correlation_states.png')
 
 def plot_wealth(wealth, title):
     plt.figure(figsize=(14, 7))
@@ -117,9 +110,9 @@ def plot_wealth(wealth, title):
     plt.title(title)
     plt.xlabel('Time Step')
     plt.ylabel('Wealth')
+    plt.savefig('plots\Wealth_over_time.png')
     plt.show()
 
-    save_plt_as_png(plt, 'plots\wealth.png')
 
 
 def visualize_data(merged_file_path):
