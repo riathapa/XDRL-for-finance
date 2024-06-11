@@ -81,7 +81,7 @@ def save_state_actions(filename, states, actions):
     Save the states and actions to a csv file
     """
     # Clean the array strings
-    states = [str(state).replace('\n', '').replace('   ', ' ').replace('  ', ' ').replace('.  ', '.0') for state in states]
+    states = [str(state).replace('\n', '').replace('   ', ' ').replace('  ', ' ').replace('. ', '.0') for state in states]
     actions = [str(action).replace('\n', '').replace('  ', ' ') for action in actions]
 
     with open(filename, mode='w', newline='') as file:
@@ -98,7 +98,7 @@ def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
     actions = []
     while contin:
         w2 = agent.predict(s)
-        print(s.shape,w2.shape)
+        # print(s.shape,w2.shape)
 
         states.append(s)
         actions.append(w2)

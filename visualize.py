@@ -135,7 +135,7 @@ def visualize_data(merged_file_path):
     plot_asset_prices(merged_df, price_columns, config_file)
 
     # Extract state columns
-    state_columns = [col for col in merged_df.columns if col.startswith('State') and col.startswith('State1')!=True]
+    state_columns = [col for col in merged_df.columns if col.startswith('State') and col.startswith('State_Cash')!=True]
     # Plot the correlation matrix of the states
     plot_correlation_states(merged_df, state_columns)
 

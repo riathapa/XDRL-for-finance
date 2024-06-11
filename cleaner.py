@@ -3,6 +3,7 @@ import numpy as np
 import ast
 import json
 
+
 def clean_state_action_csv(input_file, output_file, config_file):
     # Load the config.json file
     with open(config_file, 'r') as f:
@@ -20,9 +21,13 @@ def clean_state_action_csv(input_file, output_file, config_file):
     def parse_array(array_str):
         return np.array(ast.literal_eval(array_str.replace('\n', '').replace('  ', ',').replace(' ', ',')))
     
+    # print(df.head())
+    
     # Parse the State and Action columns
     df['State'] = df['State'].apply(parse_array)
     df['Action'] = df['Action'].apply(parse_array)
+
+    # print(df.head())
     
    # Flatten the State and Action columns
     flattened_data = []
@@ -32,22 +37,32 @@ def clean_state_action_csv(input_file, output_file, config_file):
         flattened_row = np.concatenate((action, state))
         flattened_data.append(flattened_row)
     
+    # print(flattened_data)
+    
     # Create column names
-    action_columns = [f'Action{i+1}' for i in range(M)]
+    # Action columns with asset names
+    action_columns = []
+    for i in range(M):
+        asset_name = config['session']['codes'][i-1] if i > 0 else 'Cash'
+        column_name = f'Action_{asset_name}'
+        action_columns.append(column_name)
     state_columns = []
     for i in range(M):
         for j in range(L):
             for k in range(N):
-                state_columns.append(f'State{i+1}.{j+1}.{k+1}')
+                # Add the feature name and asset name to the column
+                feature_name = config['session']['features'][k]
+                asset_name = config['session']['codes'][i-1] if i > 0 else 'Cash'
+                column_name = f'State_{asset_name}_{feature_name}_L{j+1}'
+                state_columns.append(column_name)
     columns = action_columns + state_columns
-    
+    # print(columns)
     # Create a new DataFrame with the flattened data
     cleaned_df = pd.DataFrame(flattened_data, columns=columns)
     
     # Save the cleaned DataFrame to a new CSV file
     cleaned_df.to_csv(output_file, index=False)
 
-import pandas as pd
 
 def merge_state_action_results(cleaned_state_action_file, results_file, output_file,config_file):
     # Load the config.json file
@@ -70,7 +85,9 @@ def merge_state_action_results(cleaned_state_action_file, results_file, output_f
     price_columns = []
     # Divide the price column in M columns by the comma
     for i in range(M):
-        price_columns.append(f'Price{i+1}')
+        # Add the asset name to the column from the config
+        asset_name = config['session']['codes'][i-1] if i > 0 else 'Cash'
+        price_columns.append(f'Price_{asset_name}')
     results_df[price_columns] = results_df['Price'].str.split(',', expand=True)
     results_df.drop('Price', axis=1, inplace=True)
 
@@ -94,7 +111,7 @@ clean_state_action_csv(input_file, output_file, config_file)
 
 # Example usage
 cleaned_state_action_file = 'cleaned_state_action.csv'
-results_file = 'result1-66.0238408366999.csv'
+results_file = 'result1-57.064914695339375.csv'
 output_file = 'state_action_results.csv'
 config_file = 'config.json'
 

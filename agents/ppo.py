@@ -26,20 +26,24 @@ METHOD = [
 
 def con2d(x,scope,trainable):
     with tf.variable_scope(scope):
-        con_W_1=tf.Variable(tf.truncated_normal([1, 3, int(x.shape[3]), 2],stddev=0.5),trainable=trainable)
-        layer=tf.nn.conv2d(x,filter=con_W_1,padding='VALID',strides=[1,1,1,1])
-        norm=tf.layers.batch_normalization(layer)
-        x=tf.nn.relu(norm)
-
-        con_W_2 = tf.Variable(tf.truncated_normal([1, int(x.shape[2]), int(x.shape[3]), 48], stddev=0.5),trainable=trainable)
-        layer = tf.nn.conv2d(x, filter=con_W_2, padding='VALID', strides=[1, 1, 1, 1])
-        norm = tf.layers.batch_normalization(layer)
+       # First convolution layer
+        con_W_1 = tf.Variable(tf.truncated_normal([1, 3, int(x.shape[3]), 2], stddev=0.5), trainable=trainable)
+        layer = tf.nn.conv2d(x, con_W_1, padding='SAME', strides=[1, 1, 1, 1])  # Use 'SAME' padding
+        norm = tf.layers.batch_normalization(layer, training=trainable)
         x = tf.nn.relu(norm)
 
-        con_W_3 = tf.Variable(tf.truncated_normal([1, int(x.shape[2]), 48, 1], stddev=0.5),trainable=trainable)
-        layer = tf.nn.conv2d(x, filter=con_W_3, padding='VALID', strides=[1, 1, 1, 1])
-        norm = tf.layers.batch_normalization(layer)
+        # Second convolution layer
+        con_W_2 = tf.Variable(tf.truncated_normal([1, 3, int(x.shape[3]), 48], stddev=0.5), trainable=trainable)
+        layer = tf.nn.conv2d(x, con_W_2, padding='SAME', strides=[1, 1, 1, 1])  # Use 'SAME' padding
+        norm = tf.layers.batch_normalization(layer, training=trainable)
+        x = tf.nn.relu(norm)
+
+        # Third convolution layer
+        con_W_3 = tf.Variable(tf.truncated_normal([1, 3, 48, 1], stddev=0.5), trainable=trainable)
+        layer = tf.nn.conv2d(x, con_W_3, padding='SAME', strides=[1, 1, 1, 1])  # Use 'SAME' padding
+        norm = tf.layers.batch_normalization(layer, training=trainable)
         out = tf.nn.relu(norm)
+
 
     return out
 
