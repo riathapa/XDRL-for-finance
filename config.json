@@ -12,7 +12,7 @@
 	    "codes":["AAPL","ADBE","BABA","SNE","V"],
 		"features":["close","high","low","open"],
 		"agents":["CNN","PPO","1"],
-		"epochs":"10000",
+		"epochs":"100",
 		"noise_flag":"False",
 		"record_flag":"False",
 		"plot_flag":"False",

@@ -2,12 +2,14 @@
 """
 Notes: it's for downloading data
 """
+import tushare as ts
+import pandas as pd
 
 class DataDownloader:
     def __init__(self,config):
         start_date = config["data"]["start_date"]
         end_date = config["data"]["end_date"]
-        market_types = config["data"]["mark_types"]
+        market_types = config["data"]["market_types"]
         ktype = config["data"]["ktype"]
         for market in market_types:
             if market=='stock':

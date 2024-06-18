@@ -115,4 +115,4 @@ results_file = 'result1-57.064914695339375.csv'
 output_file = 'state_action_results.csv'
 config_file = 'config.json'
 
-merge_state_action_results(cleaned_state_action_file, results_file, output_file,config_file)
+# merge_state_action_results(cleaned_state_action_file, results_file, output_file,config_file)
