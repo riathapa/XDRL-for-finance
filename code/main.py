@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 from agents.ornstein_uhlenbeck import OrnsteinUhlenbeckActionNoise
 import csv
 import os
-from lime import lime_tabular
 
 eps=10e-8
 epochs=0
@@ -81,29 +80,15 @@ def save_state_actions(filename, states, actions):
     """
     Save the states and actions to a csv file
     """
+    # Clean the array strings
+    states = [str(state).replace('\n', '').replace('   ', ' ').replace('  ', ' ').replace('. ', '.0') for state in states]
+    actions = [str(action).replace('\n', '').replace('  ', ' ') for action in actions]
+
     with open(filename, mode='w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['State', 'Action'])
         for state, action in zip(states, actions):
             writer.writerow([state, action])
-
-def explain_action_lime(agent, state, num_features=10):
-    """
-    Explain the action of the agent for a given state using LIME.
-    """
-    def predict_fn(states):
-        return agent.predict(np.array(states))
-
-    explainer = lime_tabular.LimeTabularExplainer(
-        training_data=np.array(state),
-        mode='regression',
-        feature_names=[f'feature_{i}' for i in range(len(state))],
-        discretize_continuous=True
-    )
-
-    exp = explainer.explain_instance(state, predict_fn, num_features=num_features)
-    exp.show_in_notebook(show_table=True)
-    return exp
 
 def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable):
     info = env.step(None,None)
@@ -144,10 +129,6 @@ def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
         stocktrader.update_summary(loss,r,q_value,actor_loss,w2,p)
         s = s_next
     save_state_actions(f"state_action_recopilation.csv", states, actions)
-
-    # Explain the actions using LIME
-    for state in states:
-        explain_action_lime(agent, state)
 
 
 
