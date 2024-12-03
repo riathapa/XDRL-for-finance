@@ -3,7 +3,12 @@ A simple version of Proximal Policy Optimization (PPO) using single thread.
 
 """
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+from keras.src.layers import BatchNormalization
+
+tf.compat.v1.disable_eager_execution()
+tf.disable_v2_behavior()
+import tensorflow.python.keras.layers
 import numpy as np
 import json
 import time
@@ -25,31 +30,31 @@ METHOD = [
 ][1]        # choose the method for optimization
 
 def con2d(x,scope,trainable):
-    with tf.variable_scope(scope):
+    with tf.compat.v1.variable_scope(scope):
        # First convolution layer
-        con_W_1 = tf.Variable(tf.truncated_normal([1, 3, int(x.shape[3]), 2], stddev=0.5), trainable=trainable)
+        con_W_1 = tf.Variable(tf.random.truncated_normal([1, 3, int(x.shape[3]), 2], stddev=0.5), trainable=trainable)
         layer = tf.nn.conv2d(x, con_W_1, padding='SAME', strides=[1, 1, 1, 1])  # Use 'SAME' padding
-        norm = tf.layers.batch_normalization(layer, training=trainable)
-        x = tf.nn.relu(norm)
+        # norm = BatchNormalization(layer, training=True)
+        x = tf.nn.relu(layer)
 
         # Second convolution layer
-        con_W_2 = tf.Variable(tf.truncated_normal([1, 3, int(x.shape[3]), 48], stddev=0.5), trainable=trainable)
+        con_W_2 = tf.Variable(tf.random.truncated_normal([1, 3, int(x.shape[3]), 48], stddev=0.5), trainable=trainable)
         layer = tf.nn.conv2d(x, con_W_2, padding='SAME', strides=[1, 1, 1, 1])  # Use 'SAME' padding
-        norm = tf.layers.batch_normalization(layer, training=trainable)
-        x = tf.nn.relu(norm)
+        # norm = BatchNormalization(layer, training=True)
+        x = tf.nn.relu(layer)
 
         # Third convolution layer
-        con_W_3 = tf.Variable(tf.truncated_normal([1, 3, 48, 1], stddev=0.5), trainable=trainable)
+        con_W_3 = tf.Variable(tf.random.truncated_normal([1, 3, 48, 1], stddev=0.5), trainable=trainable)
         layer = tf.nn.conv2d(x, con_W_3, padding='SAME', strides=[1, 1, 1, 1])  # Use 'SAME' padding
-        norm = tf.layers.batch_normalization(layer, training=trainable)
-        out = tf.nn.relu(norm)
+        # norm = BatchNormalization(layer, training=True)
+        out = tf.nn.relu(layer)
 
 
     return out
 
 def dense(x,out_dim,activation,scope,trainable):
-    with tf.variable_scope(scope):
-        t1_w = tf.Variable(tf.truncated_normal([int(x.shape[1]), out_dim], stddev=0.1),trainable=trainable)
+    with tf.compat.v1.variable_scope(scope):
+        t1_w = tf.Variable(tf.random.truncated_normal([int(x.shape[1]), out_dim], stddev=0.1),trainable=trainable)
         t1_b = tf.Variable(tf.constant(0.1, shape=[out_dim]),trainable=trainable)
         out = tf.matmul(x, t1_w) + t1_b
 
@@ -70,22 +75,22 @@ def build_summaries():
     reward=tf.Variable(0.)
     ep_ave_max_q=tf.Variable(0.)
     actor_loss=tf.Variable(0.)
-    tf.summary.scalar('Critic_loss',critic_loss)
-    tf.summary.scalar('Reward',reward)
-    tf.summary.scalar('Ep_ave_max_q',ep_ave_max_q)
-    tf.summary.scalar('Actor_loss',actor_loss)
+    tf.compat.v1.summary.scalar('Critic_loss',critic_loss)
+    tf.compat.v1.summary.scalar('Reward',reward)
+    tf.compat.v1.summary.scalar('Ep_ave_max_q',ep_ave_max_q)
+    tf.compat.v1.summary.scalar('Actor_loss',actor_loss)
 
 
     summary_vars=[critic_loss,reward,ep_ave_max_q,actor_loss]
-    summary_ops=tf.summary.merge_all()
+    summary_ops=tf.compat.v1.summary.merge_all()
     return summary_ops,summary_vars
 
 
 class PPO(object):
 
     def __init__(self,predictor,M,L,N,name,load_weights,trainable):
-        self.sess = tf.Session()
-        self.tfs = tf.placeholder(tf.float32, [None, M,L,N], 'state')
+        self.sess = tf.compat.v1.Session()
+        self.tfs = tf.compat.v1.placeholder(tf.float32, [None, M,L,N], 'state')
         self.name=name
 
         self.M=M
@@ -95,36 +100,38 @@ class PPO(object):
         self.gamma=0.99
 
         # critic
-        with tf.variable_scope('critic'):
+        with tf.compat.v1.variable_scope('critic'):
             l1 = con2d(self.tfs,'critic',True)[:,:,0,0]
             self.v = dense(l1,1,'relu','critic',True)
-            self.tfdc_r = tf.placeholder(tf.float32, [None, 1], 'discounted_r')
+            self.tfdc_r = tf.compat.v1.placeholder(tf.float32, [None, 1], 'discounted_r')
             self.advantage = self.tfdc_r - self.v
             self.closs = tf.reduce_mean(tf.square(self.advantage))
             # Optimization Op
             global_step = tf.Variable(0, trainable=False)
-            C_learning_rate = tf.train.exponential_decay(C_LR, global_step,
+            C_learning_rate = tf.compat.v1.train.exponential_decay(C_LR, global_step,
                                                        decay_steps=2000,
                                                        decay_rate=0.9, staircase=False)
-            self.ctrain_op = tf.train.GradientDescentOptimizer(C_learning_rate).minimize(self.closs,global_step=global_step)
+            # self.ctrain_op = tf.optimizers.SGD.GradientDescentOptimizer(C_learning_rate).minimize(self.closs,global_step=global_step)
+            self.ctrain_op = tf.compat.v1.train.GradientDescentOptimizer(C_learning_rate).minimize(self.closs,
+                                                                                                  global_step=global_step)
 
         # actor
         pi, pi_params = self._build_anet('pi', trainable=True)
         oldpi, oldpi_params = self._build_anet('oldpi', trainable=False)
-        with tf.variable_scope('sample_action'):
+        with tf.compat.v1.variable_scope('sample_action'):
             self.sample_op =pi.sample(1)[0]#tf.squeeze(pi.sample(1),axis=[1,3])       # choosing action
-        with tf.variable_scope('update_oldpi'):
+        with tf.compat.v1.variable_scope('update_oldpi'):
             self.update_oldpi_op = [oldp.assign(p) for p, oldp in zip(pi_params, oldpi_params)]
 
-        self.tfa = tf.placeholder(tf.float32, [None, self.M], 'action')
-        self.tfadv = tf.placeholder(tf.float32, [None, 1], 'advantage')
-        with tf.variable_scope('loss'):
-            with tf.variable_scope('surrogate'):
+        self.tfa = tf.compat.v1.placeholder(tf.float32, [None, self.M], 'action')
+        self.tfadv = tf.compat.v1.placeholder(tf.float32, [None, 1], 'advantage')
+        with tf.compat.v1.variable_scope('loss'):
+            with tf.compat.v1.variable_scope('surrogate'):
                 # ratio = tf.exp(pi.log_prob(self.tfa) - oldpi.log_prob(self.tfa))
                 ratio = pi.prob(self.tfa) / oldpi.prob(self.tfa)
                 surr = ratio * self.tfadv
             if METHOD['name'] == 'kl_pen':
-                self.tflam = tf.placeholder(tf.float32, None, 'lambda')
+                self.tflam = tf.compat.v1.placeholder(tf.float32, None, 'lambda')
                 kl = tf.distributions.kl_divergence(oldpi, pi)
                 self.kl_mean = tf.reduce_mean(kl)
                 self.aloss = -(tf.reduce_mean(surr - self.tflam * kl))
@@ -133,18 +140,18 @@ class PPO(object):
                     surr,
                     tf.clip_by_value(ratio, 1.-METHOD['epsilon'], 1.+METHOD['epsilon'])*self.tfadv))
 
-        with tf.variable_scope('atrain'):
-            A_learning_rate = tf.train.exponential_decay(A_LR, global_step,
+        with tf.compat.v1.variable_scope('atrain'):
+            A_learning_rate = tf.compat.v1.train.exponential_decay(A_LR, global_step,
                                                          decay_steps=2000,
                                                          decay_rate=0.9, staircase=False)
-            self.atrain_op = tf.train.GradientDescentOptimizer(A_learning_rate).minimize(self.aloss)
+            self.atrain_op = tf.compat.v1.train.GradientDescentOptimizer(A_learning_rate).minimize(self.aloss)
 
         # Initial saver
         self.saver = tf.train.Saver(max_to_keep=3)
         if load_weights=="True":
             print("Loading Model")
             try:
-                checkpoint = tf.train.get_checkpoint_state(self.result_save_path)
+                checkpoint = tf.compat.v1.train.get_checkpoint_state(self.result_save_path)
                 if checkpoint and checkpoint.model_checkpoint_path:
                     self.saver.restore(self.sess, checkpoint.model_checkpoint_path)
                     print("Successfully loaded:", checkpoint.model_checkpoint_path)
@@ -179,7 +186,7 @@ class PPO(object):
         return critic_loss
 
     def _build_anet(self, name, trainable):
-        with tf.variable_scope(name):
+        with tf.compat.v1.variable_scope(name):
             input=con2d(self.tfs,'critic',trainable)[:,:,0,0]
             l1 = dense(input, 100,'relu', 'critic',trainable)
             mu = dense(l1, self.M, 'tanh', 'critic',trainable)

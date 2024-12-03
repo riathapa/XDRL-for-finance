@@ -33,7 +33,7 @@ class Environment:
         # 生成有效时间
         start_date = [date for date in data.index if date > pd.to_datetime(start_date)][0]
         end_date = [date for date in data.index if date < pd.to_datetime(end_date)][-1]
-        data=data[start_date.strftime("%Y-%m-%d"):end_date.strftime("%Y-%m-%d")]
+        # data=data[start_date.strftime("%Y-%m-%d"):end_date.strftime("%Y-%m-%d")]
         #TO DO:REFINE YOUR DATA
 
         #Initialize parameters
@@ -47,8 +47,9 @@ class Environment:
         self.date_len=len(datee)
         for asset in codes:
             asset_data=data[data["code"]==asset].reindex(datee).sort_index()#加入时间的并集，会产生缺失值pd.to_datetime(self.date_list)
-            asset_data['close']=asset_data['close'].fillna(method='pad')
-            base_price = asset_data.ix[end_date, 'close']
+            asset_data['close']=asset_data['close'].bfill()
+            print("Asset Data: ", asset_data)
+            base_price = asset_data.loc[end_date, 'close']
             asset_dict[str(asset)]= asset_data
             asset_dict[str(asset)]['close'] = asset_dict[str(asset)]['close'] / base_price
 
@@ -87,8 +88,10 @@ class Environment:
                 base_TR=asset_data.ix[end_date,'TR']
                 asset_dict[str(asset)]['TR'] = asset_dict[str(asset)]['TR'] / base_TR
 
-            asset_data=asset_data.fillna(method='bfill',axis=1)
-            asset_data=asset_data.fillna(method='ffill',axis=1)#根据收盘价填充其他值
+            # asset_data=asset_data.fillna(method='bfill',axis=1)
+            asset_data = asset_data.bfill()
+            # asset_data=asset_data.fillna(method='ffill',axis=1)#根据收盘价填充其他值
+            asset_data = asset_data.bfill()
             #***********************open as preclose*******************#
             #asset_data=asset_data.dropna(axis=0,how='any')
             asset_data=asset_data.drop(columns=['code'])

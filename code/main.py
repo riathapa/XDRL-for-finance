@@ -2,16 +2,17 @@
 
 from argparse import ArgumentParser
 import json
-import time
 import pandas as pd
-import tensorflow as tf
 import numpy as np
 import math
 from decimal import Decimal
 import matplotlib.pyplot as plt
-from agents.ornstein_uhlenbeck import OrnsteinUhlenbeckActionNoise
+import ornstein_uhlenbeck
 import csv
 import os
+
+import environment
+import ppo
 
 eps=10e-8
 epochs=0
@@ -36,7 +37,7 @@ class StockTrader():
         self.w_history = []
         self.p_history = []
 
-        self.noise = OrnsteinUhlenbeckActionNoise(mu=np.zeros(M))
+        self.noise = ornstein_uhlenbeck.OrnsteinUhlenbeckActionNoise(mu=np.zeros(M))
 
     def update_summary(self,loss,r,q_value,actor_loss,w,p):
         self.loss += loss
@@ -176,9 +177,10 @@ def parse_config(config,mode):
     return codes,start_date,end_date,features,agent_config,market,predictor, framework, window_length,noise_flag, record_flag, plot_flag,reload_flag,trainable,method
 
 def session(config,mode):
-    from data.environment import Environment
+    import environment
     codes, start_date, end_date, features, agent_config, market,predictor, framework, window_length,noise_flag, record_flag, plot_flag,reload_flag,trainable,method=parse_config(config,mode)
-    env = Environment(start_date, end_date, codes, features, int(window_length),market)
+    print("Market : ", market)
+    env = environment.Environment(start_date, end_date, codes, features, int(window_length), market)
 
 
     global M
@@ -186,13 +188,13 @@ def session(config,mode):
 
     if framework == 'DDPG':
         print("*-----------------Loading DDPG Agent---------------------*")
-        from agents.ddpg import DDPG
+        from ddpg import DDPG
         agent = DDPG(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag,trainable)
 
     elif framework == 'PPO':
         print("*-----------------Loading PPO Agent---------------------*")
-        from agents.ppo import PPO
-        agent = PPO(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag,trainable)
+        import ppo
+        agent = ppo.PPO(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag, trainable)
 
     stocktrader=StockTrader()
 
