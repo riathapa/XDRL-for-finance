@@ -8,7 +8,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
-data = pd.read_csv('cleaned_state_action_recopilation.csv',sep=',')
+data = pd.read_csv('../explainability_data/cleaned_state_action_recopilation.csv',sep=',')
 
 # Separate features and target
 # Assuming the first 6 columns are actions

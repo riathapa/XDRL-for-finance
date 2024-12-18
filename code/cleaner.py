@@ -103,16 +103,16 @@ def merge_state_action_results(cleaned_state_action_file, results_file, output_f
 
 
 # Example usage
-input_file = 'state_action_recopilation.csv'
-output_file = 'cleaned_state_action.csv'
-config_file = 'config.json'
+input_file = '../state_action_recopilation.csv'
+output_file = '../explainability_data/cleaned_state_action.csv'
+config_file = '../config.json'
 
 clean_state_action_csv(input_file, output_file, config_file)
 
 # Example usage
-cleaned_state_action_file = 'cleaned_state_action.csv'
-results_file = 'result1-57.064914695339375.csv'
-output_file = 'state_action_results.csv'
-config_file = 'config.json'
+cleaned_state_action_file = '../explainability_data/cleaned_state_action.csv'
+results_file = '../result1-49.73244555831117.csv'
+output_file = '../explainability_data/state_action_results.csv'
+config_file = '../config.json'
 
-# merge_state_action_results(cleaned_state_action_file, results_file, output_file,config_file)
+merge_state_action_results(cleaned_state_action_file, results_file, output_file,config_file)
