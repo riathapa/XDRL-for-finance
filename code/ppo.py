@@ -4,17 +4,20 @@ A simple version of Proximal Policy Optimization (PPO) using single thread.
 """
 
 import tensorflow.compat.v1 as tf
+# import keras
+
 from keras.src.layers import BatchNormalization
 
 tf.compat.v1.disable_eager_execution()
 tf.disable_v2_behavior()
-import tensorflow.python.keras.layers
+# import tensorflow.python.keras.layers
 import numpy as np
 import json
 import time
 import math
 import pandas as pd
 from argparse import ArgumentParser
+# import tensorflow_probability as tfp
 
 EP_MAX = 1000
 EP_LEN = 200
@@ -164,7 +167,7 @@ class PPO(object):
             self.sess.run(tf.global_variables_initializer())
 
         if trainable:
-            self.summary_writer = tf.summary.FileWriter("./summary/PPO", self.sess.graph)
+            self.summary_writer = tf.compat.v1.summary.FileWriter("./summary/PPO", self.sess.graph)
             self.summary_ops, self.summary_vars = build_summaries()
 
         #Initial buffer

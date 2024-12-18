@@ -305,7 +305,7 @@ class DDPG:
 
         if trainable:
             # Initial summary
-            self.summary_writer = tf.summary.FileWriter('./summary/DDPG', self.sesson.graph)
+            self.summary_writer = tf.compat.v1.summary.FileWriter('./summary/DDPG', self.sesson.graph)
             self.summary_ops, self.summary_vars = build_summaries()
 
     #online actor

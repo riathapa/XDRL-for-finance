@@ -231,14 +231,14 @@ def main():
     parser = build_parser()
     args=vars(parser.parse_args())
     print(args)
-    with open('config.json') as f:
+    with open('../config.json') as f:
         config=json.load(f)
-        if args['mode']=='download':
-            from data.download_data import DataDownloader
-            data_downloader=DataDownloader(config)
-            data_downloader.save_data()
-        else:
-            session(config,args['mode'])
+        # if args['mode']=='download':
+        #     from data.download_data import DataDownloader
+        #     data_downloader=DataDownloader(config)
+        #     data_downloader.save_data()
+        # else:
+        session(config,args['mode'])
 
 if __name__=="__main__":
     main()

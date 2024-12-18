@@ -22,7 +22,7 @@ class Environment:
         self.cost=0.0025
 
         #read all data
-        data=pd.read_csv(r'./data/'+market+'.csv',index_col=0,parse_dates=True,dtype=object)
+        data=pd.read_csv(r'../data/'+market+'.csv',index_col=0,parse_dates=True,dtype=object)
         data["code"]=data["code"].astype(str)
         if market=='China':
             data["code"]=data["code"].apply(fill_zeros)
