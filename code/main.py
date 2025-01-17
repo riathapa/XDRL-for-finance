@@ -145,6 +145,8 @@ def parse_config(config,mode):
     noise_flag, record_flag, plot_flag=config["session"]["noise_flag"],config["session"]["record_flag"],config["session"]["plot_flag"]
     predictor, framework, window_length = agent_config
     reload_flag, trainable=config["session"]['reload_flag'],config["session"]['trainable']
+    # In context to REinforcement learning, method = model - free
+    # means that the  systems creates an environment using hit and trial
     method=config["session"]['method']
 
     global epochs
@@ -179,46 +181,47 @@ def parse_config(config,mode):
 def session(config,mode):
     import environment
     codes, start_date, end_date, features, agent_config, market,predictor, framework, window_length,noise_flag, record_flag, plot_flag,reload_flag,trainable,method=parse_config(config,mode)
+
     print("Market : ", market)
-    env = environment.Environment(start_date, end_date, codes, features, int(window_length), market)
-
-
-    global M
-    M=len(codes)+1
-
-    if framework == 'DDPG':
-        print("*-----------------Loading DDPG Agent---------------------*")
-        from ddpg import DDPG
-        agent = DDPG(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag,trainable)
-
-    elif framework == 'PPO':
-        print("*-----------------Loading PPO Agent---------------------*")
-        import ppo
-        agent = ppo.PPO(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag, trainable)
-
-    stocktrader=StockTrader()
-
-    if mode=='train':
-
-        print("Training with {:d}".format(epochs))
-        for epoch in range(epochs):
-            print("Now we are at epoch", epoch)
-            traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
-
-            if record_flag=='True':
-                stocktrader.write(epoch)
-
-            if plot_flag=='True':
-                stocktrader.plot_result()
-
-            stocktrader.print_result(epoch,agent)
-            stocktrader.reset()
-
-    elif mode=='test':
-        traversal(stocktrader, agent, env, 1, noise_flag,framework,method,trainable)
-        stocktrader.write(1)
-        stocktrader.plot_result()
-        stocktrader.print_result(1, agent)
+    # env = environment.Environment(start_date, end_date, codes, features, int(window_length), market)
+    #
+    #
+    # global M
+    # M=len(codes)+1
+    #
+    # if framework == 'DDPG':
+    #     print("*-----------------Loading DDPG Agent---------------------*")
+    #     from ddpg import DDPG
+    #     agent = DDPG(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag,trainable)
+    #
+    # elif framework == 'PPO':
+    #     print("*-----------------Loading PPO Agent---------------------*")
+    #     import ppo
+    #     agent = ppo.PPO(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag, trainable)
+    #
+    # stocktrader=StockTrader()
+    #
+    # if mode=='train':
+    #
+    #     print("Training with {:d}".format(epochs))
+    #     for epoch in range(epochs):
+    #         print("Now we are at epoch", epoch)
+    #         traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
+    #
+    #         if record_flag=='True':
+    #             stocktrader.write(epoch)
+    #
+    #         if plot_flag=='True':
+    #             stocktrader.plot_result()
+    #
+    #         stocktrader.print_result(epoch,agent)
+    #         stocktrader.reset()
+    #
+    # elif mode=='test':
+    #     traversal(stocktrader, agent, env, 1, noise_flag,framework,method,trainable)
+    #     stocktrader.write(1)
+    #     stocktrader.plot_result()
+    #     stocktrader.print_result(1, agent)
 
 def build_parser():
     parser = ArgumentParser(description='Provide arguments for training different DDPG or PPO models in Portfolio Management')
@@ -228,9 +231,15 @@ def build_parser():
 
 
 def main():
+    print("Inside main")
+    #PArser helps to convert the command line scripts into human understandable variables
     parser = build_parser()
+    #Converts the command line scripts into variables and puts them in a dictionary
     args=vars(parser.parse_args())
+    #HEre we print the arguments
     print(args)
+
+
     with open('../config.json') as f:
         config=json.load(f)
         # if args['mode']=='download':
