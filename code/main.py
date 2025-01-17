@@ -241,6 +241,7 @@ def main():
 
 
     with open('../config.json') as f:
+
         config=json.load(f)
         # if args['mode']=='download':
         #     from data.download_data import DataDownloader
