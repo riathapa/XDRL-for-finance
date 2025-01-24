@@ -11,14 +11,13 @@
 		"market_types":"America",
 	    "codes":["APPL","ADBE","BABA","SNE","V"],
 		"features":["close","high","low","open"],
-		"agents":["CNN","PPO","1"],
+		"agents":["CNN","PPO","10"],
 		"epochs":"100",
 		"noise_flag":"False",
 		"record_flag":"False",
 		"plot_flag":"False",
 		"reload_flag":"False",
 		"trainable":"True",
-		"method":"model_free",
-		"window_length": "10"
+		"method":"model_free"
 	}
 }

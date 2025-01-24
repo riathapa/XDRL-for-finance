@@ -23,7 +23,11 @@ class Environment:
 
         #read all data
         # data=pd.read_csv(r'../data/'+market+'.csv',index_col=0,parse_dates=True,dtype=object)
-        data=pd.read_csv(r'../data/'+market+'.csv',index_col=0,parse_dates=True,dtype=object)
+        # data=pd.read_csv(r'../data/'+market+'.csv',index_col='time',parse_dates=True,dtype=object)
+        data=pd.read_csv(r'../data/'+market+'.csv')
+        # data=pd.read_csv(r'../data/'+market+'_changed_dates'+'.csv',index_col=0,parse_dates=True,dtype=object)
+        # data=pd.read_csv(r'../data/'+market+'.csv',index_col=0,parse_dates=["time"],dtype=object)
+        print(data.columns)
 
         # //convert to string
         data["code"]=data["code"].astype(str)
@@ -36,48 +40,53 @@ class Environment:
         #.loc extracta the true values
         data=data.loc[data["code"].isin(codes)]
 
-        #Printing to see the updated csv file
-        data.to_csv(r'../data/'+market+'temp'+'.csv')
-
         data[features]=data[features].astype(float)
 
         # Generate effective/valid time
         #We have changed the start date and end date
-        # start_date = [date for date in data.index if date > pd.to_datetime("2015-01-05")]
+        start_date = [pd.to_datetime("2015-01-05")]
         # start_date = [date for date in data.index if date > pd.to_datetime("2015-01-05")][0]
+        print("Start Date : ", start_date)
+        end_date = [pd.to_datetime("2017-12-29")]
         # end_date = [date for date in data.index if date < pd.to_datetime(2017-12-29)][-1]
+        print("End Date : ", end_date)
 
         #print column names
-        print(data.columns)
-        data["time"]=pd.to_datetime(data["time"])
+        data['time']=pd.to_datetime(data['time'], errors='raise')
 
-        # end_date = [date for date in data.index if date < pd.to_datetime(2017 - 12 - 29)]
-        # print(end_date)
-
-        # date for date in data.index
-
-        start_date = pd.to_datetime("2015-01-05")
-        end_date = pd.to_datetime("2017-12-29")
-
-        data=data[start_date.strftime("%Y-%m-%d"):end_date.strftime("%Y-%m-%d")]
+        # data=data[start_date.strftime("%Y-%m-%d"):end_date.strftime("%Y-%m-%d")]
         # data=data[start_date:end_date]
 
-        data.to_csv(r'../data/'+market+'_changed_dates'+'.csv')
-        #TO DO:REFINE YOUR DATA
+        data.to_csv(r'../data/'+'changed_market'+'.csv')
+        # #TO DO:REFINE YOUR DATA
 
+        # return
         #Initialize parameters
         self.M=len(codes)+1
         self.N=len(features)
         self.L=window_length
 
-        #为每一个资产生成数据
-        asset_dict=dict()#每一个资产的数据
+        # “Generate data for each asset”
+        # The data of each asset
+        asset_dict=dict()
         datee=data.index.unique()
+        print(datee)#takes out the unique element
+        print(datee[0])
+        print(type(datee))#takes out the unique element
+        # return
+
         self.date_len=len(datee)
+
         for asset in codes:
-            asset_data=data[data["code"]==asset].reindex(datee).sort_index()#加入时间的并集，会产生缺失值pd.to_datetime(self.date_list)
+            asset_data=data[data["code"]==asset].reindex(datee).sort_index() #Adding the union of time will produce missing values   pd.to_datetime(self.date_list)
+
+            print("Asset Data : ", asset_data)
+
+            return
             asset_data['close']=asset_data['close'].bfill()
             print("Asset Data: ", asset_data)
+
+            #we have used end date here
             base_price = asset_data.loc[end_date, 'close']
             asset_dict[str(asset)]= asset_data
             asset_dict[str(asset)]['close'] = asset_dict[str(asset)]['close'] / base_price
@@ -126,7 +135,7 @@ class Environment:
             asset_data=asset_data.drop(columns=['code'])
             asset_dict[str(asset)]=asset_data
 
-
+        # return
         #开始生成tensor
         self.states=[]
         self.price_history=[]
