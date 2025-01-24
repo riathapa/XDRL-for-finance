@@ -22,18 +22,47 @@ class Environment:
         self.cost=0.0025
 
         #read all data
+        # data=pd.read_csv(r'../data/'+market+'.csv',index_col=0,parse_dates=True,dtype=object)
         data=pd.read_csv(r'../data/'+market+'.csv',index_col=0,parse_dates=True,dtype=object)
+
+        # //convert to string
         data["code"]=data["code"].astype(str)
+
         if market=='China':
             data["code"]=data["code"].apply(fill_zeros)
 
+        #check if the codes in teh csv match the ones present in the config file.
+        #.isin returns True and False
+        #.loc extracta the true values
         data=data.loc[data["code"].isin(codes)]
+
+        #Printing to see the updated csv file
+        data.to_csv(r'../data/'+market+'temp'+'.csv')
+
         data[features]=data[features].astype(float)
 
-        # 生成有效时间
-        start_date = [date for date in data.index if date > pd.to_datetime(start_date)][0]
-        end_date = [date for date in data.index if date < pd.to_datetime(end_date)][-1]
-        # data=data[start_date.strftime("%Y-%m-%d"):end_date.strftime("%Y-%m-%d")]
+        # Generate effective/valid time
+        #We have changed the start date and end date
+        # start_date = [date for date in data.index if date > pd.to_datetime("2015-01-05")]
+        # start_date = [date for date in data.index if date > pd.to_datetime("2015-01-05")][0]
+        # end_date = [date for date in data.index if date < pd.to_datetime(2017-12-29)][-1]
+
+        #print column names
+        print(data.columns)
+        data["time"]=pd.to_datetime(data["time"])
+
+        # end_date = [date for date in data.index if date < pd.to_datetime(2017 - 12 - 29)]
+        # print(end_date)
+
+        # date for date in data.index
+
+        start_date = pd.to_datetime("2015-01-05")
+        end_date = pd.to_datetime("2017-12-29")
+
+        data=data[start_date.strftime("%Y-%m-%d"):end_date.strftime("%Y-%m-%d")]
+        # data=data[start_date:end_date]
+
+        data.to_csv(r'../data/'+market+'_changed_dates'+'.csv')
         #TO DO:REFINE YOUR DATA
 
         #Initialize parameters

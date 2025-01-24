@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import ornstein_uhlenbeck
 import csv
 import os
+import yfinance as yf
 
 import environment
 import ppo
@@ -145,7 +146,7 @@ def parse_config(config,mode):
     noise_flag, record_flag, plot_flag=config["session"]["noise_flag"],config["session"]["record_flag"],config["session"]["plot_flag"]
     predictor, framework, window_length = agent_config
     reload_flag, trainable=config["session"]['reload_flag'],config["session"]['trainable']
-    # In context to REinforcement learning, method = model - free
+    # In context to Reinforcement learning, method = model - free
     # means that the  systems creates an environment using hit and trial
     method=config["session"]['method']
 
@@ -182,8 +183,10 @@ def session(config,mode):
     import environment
     codes, start_date, end_date, features, agent_config, market,predictor, framework, window_length,noise_flag, record_flag, plot_flag,reload_flag,trainable,method=parse_config(config,mode)
 
+    print("Window length: ",window_length)
+
     print("Market : ", market)
-    # env = environment.Environment(start_date, end_date, codes, features, int(window_length), market)
+    env = environment.Environment(start_date, end_date, codes, features, int(window_length), market)
     #
     #
     # global M
@@ -232,7 +235,7 @@ def build_parser():
 
 def main():
     print("Inside main")
-    #PArser helps to convert the command line scripts into human understandable variables
+    #Parser helps to convert the command line scripts into human understandable variables
     parser = build_parser()
     #Converts the command line scripts into variables and puts them in a dictionary
     args=vars(parser.parse_args())
@@ -243,10 +246,16 @@ def main():
     with open('../config.json') as f:
 
         config=json.load(f)
-        # if args['mode']=='download':
-        #     from data.download_data import DataDownloader
-        #     data_downloader=DataDownloader(config)
-        #     data_downloader.save_data()
+        if args['mode']=='download':
+
+            stock_data = yf.download("NVDA", start="2023-01-01", end="2023-12-31")  # Replace "AAPL" with desired ticker
+            stock_data["percent"] = stock_data["Close"].pct_change() * 100
+            print(type(stock_data))
+            stock_data.to_csv("../data/stock_data.csv", sep='\t')
+            print(stock_data)
+            # from data.download_data import DataDownloader
+            # data_downloader=DataDownloader(config)
+            # data_downloader.save_data()
         # else:
         session(config,args['mode'])
 
