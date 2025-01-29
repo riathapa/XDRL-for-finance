@@ -234,6 +234,14 @@ def build_parser():
 
 
 def main():
+    # start_date = '2015-01-01'  # Change as needed
+    # num_rows = 3773
+    #
+    # # Create a DataFrame with the date column
+    # df = pd.DataFrame({'date_column': pd.date_range(start=start_date, periods=num_rows, freq='D')})
+    #
+    # df.to_csv(r'../data/' + 'dfchanged_market' + '.csv')
+    # return
     print("Inside main")
     #Parser helps to convert the command line scripts into human understandable variables
     parser = build_parser()

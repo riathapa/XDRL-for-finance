@@ -22,12 +22,18 @@ class Environment:
         self.cost=0.0025
 
         #read all data
-        # data=pd.read_csv(r'../data/'+market+'.csv',index_col=0,parse_dates=True,dtype=object)
-        # data=pd.read_csv(r'../data/'+market+'.csv',index_col='time',parse_dates=True,dtype=object)
-        data=pd.read_csv(r'../data/'+market+'.csv')
-        # data=pd.read_csv(r'../data/'+market+'_changed_dates'+'.csv',index_col=0,parse_dates=True,dtype=object)
-        # data=pd.read_csv(r'../data/'+market+'.csv',index_col=0,parse_dates=["time"],dtype=object)
+        #Original CSV
+        # data=pd.read_csv(r'../data/'+market+'.csv', parse_dates=True,dtype=object)
+
+
+        data=pd.read_csv(r'../data/'+market+ 'Copy' + '.csv', parse_dates=True,dtype=object)
         print(data.columns)
+        # data = data.rename(columns={'time':'date'})
+        # print(data.columns)
+        # print(type(data['date']))
+        # data.to_csv(r'../data/' + 'changed_market' + '.csv')
+
+        # return
 
         # //convert to string
         data["code"]=data["code"].astype(str)
@@ -37,27 +43,49 @@ class Environment:
 
         #check if the codes in teh csv match the ones present in the config file.
         #.isin returns True and False
-        #.loc extracta the true values
+        #.loc extract the true values
         data=data.loc[data["code"].isin(codes)]
 
         data[features]=data[features].astype(float)
 
         # Generate effective/valid time
         #We have changed the start date and end date
-        start_date = [pd.to_datetime("2015-01-05")]
-        # start_date = [date for date in data.index if date > pd.to_datetime("2015-01-05")][0]
+        #WE CAN CHOOSE THE START DATA AND END DATE
+        # -----------------------------------------------------
+        # -----------------------------------------------------
+        # -----------------------------------------------------
+        # start_date = pd.to_datetime('2015-01-05')
+        # start_date = [date for date in data.index if date > pd.to_datetime('2015-01-05')][0]
+
+        data.to_csv(r'../data/' + 'changed_market' + '.csv')
+
+
+        start_date = pd.to_datetime('2015-01-05')
+        start_date_without_time = start_date.date()
         print("Start Date : ", start_date)
-        end_date = [pd.to_datetime("2017-12-29")]
-        # end_date = [date for date in data.index if date < pd.to_datetime(2017-12-29)][-1]
+        print("Start Date without time : ", start_date.date())
+
+        # end_date = pd.to_datetime("2017-12-29")
+        # end_date = [date for date in data.index if date < pd.to_datetime(end_date)][-1]
+        end_date = pd.to_datetime('2017-12-26')
+        end_date_without_time = end_date.date()
         print("End Date : ", end_date)
+        print("End Date : ", end_date.date())
 
-        #print column names
-        data['time']=pd.to_datetime(data['time'], errors='raise')
+        print("Data Types without time : ", type(start_date), type(end_date))
 
+        # -----------------------------------------------------
+        # -----------------------------------------------------
+        # -----------------------------------------------------
+
+        # return
+        # data['date']=pd.to_datetime(data['date'], format='%Y-%m-%d')
+        # data.date = pd.to_datetime(data.date)
+        # print(data['date'].dtype)
+        # data.to_csv(r'../data/' + 'changed_market3' + '.csv')
+
+        # return
         # data=data[start_date.strftime("%Y-%m-%d"):end_date.strftime("%Y-%m-%d")]
-        # data=data[start_date:end_date]
-
-        data.to_csv(r'../data/'+'changed_market'+'.csv')
         # #TO DO:REFINE YOUR DATA
 
         # return
@@ -69,6 +97,7 @@ class Environment:
         # “Generate data for each asset”
         # The data of each asset
         asset_dict=dict()
+        # return
         datee=data.index.unique()
         print(datee)#takes out the unique element
         print(datee[0])
@@ -78,18 +107,25 @@ class Environment:
         self.date_len=len(datee)
 
         for asset in codes:
-            asset_data=data[data["code"]==asset].reindex(datee).sort_index() #Adding the union of time will produce missing values   pd.to_datetime(self.date_list)
+            # Adding the union of time will produce missing values   pd.to_datetime(self.date_list)
+            asset_data=data[data["code"]==asset].reindex(datee).sort_index()
+            print(asset_data)
 
-            print("Asset Data : ", asset_data)
+            asset_data['close'] = asset_data['close'].fillna(method='pad')
+            print("Asset Data after close  function : ", asset_data)
+            data.to_csv('../data/' + 'closeFunction' + '.csv')
 
-            return
-            asset_data['close']=asset_data['close'].bfill()
-            print("Asset Data: ", asset_data)
-
+            print("Date without time : ", end_date_without_time)
             #we have used end date here
-            base_price = asset_data.loc[end_date, 'close']
+            # base_price = asset_data.loc[pd.to_datetime('2015-01-05').date(), 'close']
+            # Add the base price, generally the last element
+            base_price = 44.95
             asset_dict[str(asset)]= asset_data
+
+            #Divided the close with base price
             asset_dict[str(asset)]['close'] = asset_dict[str(asset)]['close'] / base_price
+
+            print(asset_dict)
 
             if 'high' in features:
                 asset_dict[str(asset)]['high'] = asset_dict[str(asset)]['high'] / base_price
@@ -126,16 +162,14 @@ class Environment:
                 base_TR=asset_data.ix[end_date,'TR']
                 asset_dict[str(asset)]['TR'] = asset_dict[str(asset)]['TR'] / base_TR
 
-            # asset_data=asset_data.fillna(method='bfill',axis=1)
-            asset_data = asset_data.bfill()
-            # asset_data=asset_data.fillna(method='ffill',axis=1)#根据收盘价填充其他值
-            asset_data = asset_data.bfill()
+            asset_data=asset_data.fillna(method='bfill',axis=1)
+            asset_data=asset_data.fillna(method='ffill',axis=1) #Fill other values based on the closing price.
             #***********************open as preclose*******************#
             #asset_data=asset_data.dropna(axis=0,how='any')
             asset_data=asset_data.drop(columns=['code'])
             asset_dict[str(asset)]=asset_data
-
-        # return
+        print("Done")
+        return
         #开始生成tensor
         self.states=[]
         self.price_history=[]
