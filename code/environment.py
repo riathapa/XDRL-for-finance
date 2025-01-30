@@ -107,11 +107,17 @@ class Environment:
         self.date_len=len(datee)
 
         for asset in codes:
+            print(asset)
             # Adding the union of time will produce missing values   pd.to_datetime(self.date_list)
             asset_data=data[data["code"]==asset].reindex(datee).sort_index()
             print(asset_data)
 
             asset_data['close'] = asset_data['close'].fillna(method='pad')
+            asset_data['date'] = asset_data['date'].fillna(method='pad')
+            asset_data['open'] = asset_data['high'].fillna(method='pad')
+            asset_data['low'] = asset_data['low'].fillna(method='pad')
+            asset_data['volume'] = asset_data['volume'].fillna(method='pad')
+            asset_data['percent'] = asset_data['percent'].fillna(method='pad')
             print("Asset Data after close  function : ", asset_data)
             data.to_csv('../data/' + 'closeFunction' + '.csv')
 
@@ -136,40 +142,44 @@ class Environment:
             if 'open' in features:
                 asset_dict[str(asset)]['open']=asset_dict[str(asset)]['open']/base_price
 
-            if 'PE' in features:
-                asset_data['PE']=asset_data['PE'].fillna(method='pad')
-                base_PE=asset_data.ix[end_date,'PE']
-                asset_dict[str(asset)]['PE'] = asset_dict[str(asset)]['PE'] / base_PE
-
-            if 'PB' in features:
-                asset_data['PB'] = asset_data['PB'].fillna(method='pad')
-                base_PB=asset_data.ix[end_date,'PB']
-                asset_dict[str(asset)]['PB'] = asset_dict[str(asset)]['PB'] / base_PB
-
-            if 'TR'in features:
-                asset_data['TR'] = asset_data['TR'].fillna(method='pad')
-                base_TR=asset_data.ix[end_date,'TR']
-
-            if 'TV1' in features:
-                base_TV1=asset_data.ix[end_date,'TV1']
-                asset_dict[str(asset)]['TV1'] = asset_dict[str(asset)]['TV1'] / base_TV1
-
-            if 'TV2' in features:
-                base_TV2=asset_data.ix[end_date,'TV2']
-                asset_dict[str(asset)]['TV2'] = asset_dict[str(asset)]['TV2'] / base_TV2
-
-            if 'TR' in features:
-                base_TR=asset_data.ix[end_date,'TR']
-                asset_dict[str(asset)]['TR'] = asset_dict[str(asset)]['TR'] / base_TR
+            #These features are present in china stock
+            # if 'PE' in features:
+            #     asset_data['PE']=asset_data['PE'].fillna(method='pad')
+            #     base_PE=asset_data.ix[end_date,'PE']
+            #     asset_dict[str(asset)]['PE'] = asset_dict[str(asset)]['PE'] / base_PE
+            #
+            # if 'PB' in features:
+            #     asset_data['PB'] = asset_data['PB'].fillna(method='pad')
+            #     base_PB=asset_data.ix[end_date,'PB']
+            #     asset_dict[str(asset)]['PB'] = asset_dict[str(asset)]['PB'] / base_PB
+            #
+            # if 'TR'in features:
+            #     asset_data['TR'] = asset_data['TR'].fillna(method='pad')
+            #     base_TR=asset_data.ix[end_date,'TR']
+            #
+            # if 'TV1' in features:
+            #     base_TV1=asset_data.ix[end_date,'TV1']
+            #     asset_dict[str(asset)]['TV1'] = asset_dict[str(asset)]['TV1'] / base_TV1
+            #
+            # if 'TV2' in features:
+            #     base_TV2=asset_data.ix[end_date,'TV2']
+            #     asset_dict[str(asset)]['TV2'] = asset_dict[str(asset)]['TV2'] / base_TV2
+            #
+            # if 'TR' in features:
+            #     base_TR=asset_data.ix[end_date,'TR']
+            #     asset_dict[str(asset)]['TR'] = asset_dict[str(asset)]['TR'] / base_TR
 
             asset_data=asset_data.fillna(method='bfill',axis=1)
+            print("Asset Data after bfill function : ", asset_data)
+
             asset_data=asset_data.fillna(method='ffill',axis=1) #Fill other values based on the closing price.
+            print("Asset Data after ffill function : ", asset_data)
             #***********************open as preclose*******************#
             #asset_data=asset_data.dropna(axis=0,how='any')
             asset_data=asset_data.drop(columns=['code'])
+            print("Asset Data after drop function : ", asset_data)
             asset_dict[str(asset)]=asset_data
-        print("Done")
-        return
+        # return
         #开始生成tensor
         self.states=[]
         self.price_history=[]
@@ -298,10 +308,16 @@ class Environment:
             #     state = np.stack((state,V_PB), axis=2)
 
             # print(f"State shape before reshape: {state.shape}")
+            # M is codes +1
+            # N is features
+            # L is window_length
             state = state.reshape(1, self.M, self.L, self.N)
             self.states.append(state)
             self.price_history.append(y)
             t=t+1
+
+            print("Yo")
+            print(state)
         self.reset()
 
 

@@ -187,23 +187,23 @@ def session(config,mode):
 
     print("Market : ", market)
     env = environment.Environment(start_date, end_date, codes, features, int(window_length), market)
-    #
-    #
-    # global M
-    # M=len(codes)+1
-    #
-    # if framework == 'DDPG':
-    #     print("*-----------------Loading DDPG Agent---------------------*")
-    #     from ddpg import DDPG
-    #     agent = DDPG(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag,trainable)
-    #
+    print(env)
+    return
+    global M
+    M=len(codes)+1
+
+    if framework == 'DDPG':
+        print("*-----------------Loading DDPG Agent---------------------*")
+        from ddpg import DDPG
+        agent = DDPG(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag,trainable)
+
     # elif framework == 'PPO':
     #     print("*-----------------Loading PPO Agent---------------------*")
     #     import ppo
     #     agent = ppo.PPO(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag, trainable)
-    #
-    # stocktrader=StockTrader()
-    #
+
+    stocktrader=StockTrader()
+
     # if mode=='train':
     #
     #     print("Training with {:d}".format(epochs))
@@ -264,8 +264,9 @@ def main():
             # from data.download_data import DataDownloader
             # data_downloader=DataDownloader(config)
             # data_downloader.save_data()
-        # else:
-        session(config,args['mode'])
+
+        if args['mode']=='sesh':
+            session(config,args['mode'])
 
 if __name__=="__main__":
     main()
