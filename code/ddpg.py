@@ -5,8 +5,6 @@ Created on Mon Aug  6 08:59:35 2018
 @author: Administrator
 """
 import tensorflow as tf
-# import tensorflow.compat.v1 as tf
-# tf.disable_eager_execution()
 from collections import deque
 import numpy as np
 import random
@@ -67,90 +65,47 @@ def variables_summaries(var,name):
 
 
 class StockActor:
-    # def __init__(self,sess,predictor,M,L,N,batch_size):
-    #
-    #     #Initial hyperparameters
-    #     # self.tau=10e-3
-    #     self.tau=1e-3
-    #     # self.learning_rate=10e-2
-    #     self.learning_rate=1e-2
-    #     self.gamma=0.99
-    #     self.batch_size=batch_size
-    #
-    #     #Initial session
-    #     self.sess=sess
-    #
-    #     #Initial input dimensions
-    #     self.M=M
-    #     self.L=L
-    #     self.N=N
-    #
-    #     # Build actor networks (online & target)
-    #     self.init_input()
-    #     self.scopes=['online/actor','target/actor']
-    #     self.inputs,self.out=self.build_actor(predictor,self.scopes[0],True)
-    #     self.target_inputs, self.target_out=self.build_actor(predictor,self.scopes[1],False)
-    #
-    #     self.init_op()
-    #
-    #     # Compute gradients
-    #     self.action_gradient=tf.placeholder(tf.float32,[None,self.M])
-    #     self.unnormalized_actor_gradients=tf.gradients(self.out,self.network_params,-self.action_gradient)
-    #     self.actor_gradients =list(map(lambda x: tf.math.divide_no_nan(x, self.batch_size), self.unnormalized_actor_gradients))#self.unnormalized_actor_gradients#list(map(lambda x: tf.div(x, 64), self.unnormalized_actor_gradients))
-    #
-    #     # Optimization operation
-    #     global_step = tf.Variable(0, trainable=False)
-    #     #learning_rate = tf.train.exponential_decay(self.learning_rate, global_step,
-    #                                                # decay_steps=2000,
-    #                                                # decay_rate=0.95, staircase=False)
-    #     self.optimize = tf.train.AdamOptimizer(self.learning_rate).apply_gradients(zip(self.actor_gradients, self.network_params),global_step=global_step)
-    #
-    #     # Pre-training loss
-    #     self.precise_action = tf.placeholder(tf.float32, [None, self.M])
-    #     self.pre_loss=tf.reduce_sum(tf.square(self.precise_action-self.out))
-    #
-    #     #pre_train_learning_rate = tf.train.exponential_decay(10e-4, global_step,decay_steps=2000,decay_rate=0.95, staircase=False)
-    #
-    #     # Pre-training optimizer
-    #     self.pre_optimize=tf.train.AdamOptimizer(1e-3).minimize(self.pre_loss,global_step=global_step)
-    #
-    #     # Trainable variables count
-    #     self.num_trainable_vars = len(self.network_params) + len(self.target_network_params)
+    def __init__(self,sess,predictor,M,L,N,batch_size):
 
-    def __init__(self, predictor, M, L, N, batch_size):
-        # Initial hyperparameters
-        self.tau = 1e-3
-        self.learning_rate = 1e-2
-        self.gamma = 0.99
-        self.batch_size = batch_size
+        #Initial hyperparaters
+        self.tau=10e-3
+        self.learning_rate=10e-2
+        self.gamma=0.99
+        self.batch_size=batch_size
 
-        # Initial input dimensions
-        self.M = M
-        self.L = L
-        self.N = N
+        #Initial session
+        self.sess=sess
 
-        # Build actor networks (online & target)
-        self.scopes = ['online/actor', 'target/actor']
-        self.inputs, self.out = self.build_actor(predictor, self.scopes[0], True)
-        self.target_inputs, self.target_out = self.build_actor(predictor, self.scopes[1], False)
+        #Initial input shape
+        self.M=M
+        self.L=L
+        self.N=N
 
-        # Define optimizer
+        self.init_input()
+        self.scopes=['online/actor','target/actor']
+        self.inputs,self.out=self.build_actor(predictor,self.scopes[0],True)
+        self.target_inputs, self.target_out=self.build_actor(predictor,self.scopes[1],False)
 
-        self.optimizer = tf.keras.optimizers.Adam(self.learning_rate)
+        self.init_op()
 
-        # Compute gradients
-        self.action_gradient = tf.keras.Input(shape=(self.M,))
-        self.actor_gradients = self.compute_actor_gradients()
+        self.action_gradient=tf.placeholder(tf.float32,[None]+[self.M])
+        self.unnormalized_actor_gradients=tf.gradients(self.out,self.network_params,-self.action_gradient)
+        self.actor_gradients =list(map(lambda x: tf.div(x, self.batch_size), self.unnormalized_actor_gradients))#self.unnormalized_actor_gradients#list(map(lambda x: tf.div(x, 64), self.unnormalized_actor_gradients))
 
-        # Pre-training loss
-        self.precise_action = tf.keras.Input(shape=(self.M,))
-        self.pre_loss = tf.reduce_sum(tf.square(self.precise_action - self.out))
+        # Optimization Op
+        global_step = tf.Variable(0, trainable=False)
+        #learning_rate = tf.train.exponential_decay(self.learning_rate, global_step,
+                                                   # decay_steps=2000,
+                                                   # decay_rate=0.95, staircase=False)
+        self.optimize = tf.train.AdamOptimizer(self.learning_rate).apply_gradients(zip(self.actor_gradients, self.network_params),global_step=global_step)
 
-        # Pre-training optimizer
-        self.pre_optimizer = tf.keras.optimizers.Adam(1e-3)
+        self.precise_action = tf.placeholder(tf.float32, [None]+[self.M])
+        self.pre_loss=tf.reduce_sum(tf.square((self.precise_action-self.out)))
 
-        # Trainable variables count
-        self.num_trainable_vars = len(self.network_params) + len(self.target_network_params)
+        #pre_train_learning_rate = tf.train.exponential_decay(10e-4, global_step,decay_steps=2000,decay_rate=0.95, staircase=False)
+        self.pre_optimize=tf.train.AdamOptimizer(10e-3).minimize(self.pre_loss,global_step=global_step)
+        self.num_trainable_vars = len(self.network_params) + len(self.traget_network_params)
+
     def init_input(self):
         self.r=tf.placeholder(tf.float32,[None]+[1])
 
@@ -158,7 +113,7 @@ class StockActor:
         #update op
         params=[tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,scope) for scope in self.scopes]
         self.network_params=params[0]
-        self.target_network_params=params[1]
+        self.traget_network_params=params[1]
         params=zip(params[0],params[1])
         self.update=[tf.assign(t_a,(1-self.tau)*t_a+self.tau*p_a) for p_a,t_a in params]
 
@@ -217,6 +172,8 @@ class StockCritic:
         self.target_inputs, self.target_actions, self.target_out = self.build_critic(predictor,self.scopes[1],True)
         self.inputs,self.actions,self.out=self.build_critic(predictor,self.scopes[0],False)
 
+
+
         self.init_op()
 
         self.predicted_q_value=tf.placeholder(tf.float32,[None,1])
@@ -237,7 +194,7 @@ class StockCritic:
         #update op
         params=[tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES,scope) for scope in self.scopes]
         self.network_params = params[0]
-        self.target_network_params = params[1]
+        self.traget_network_params = params[1]
         params=zip(params[0],params[1])
         self.update=[tf.assign(t_a,(1-self.tau)*t_a+self.tau*p_a) for p_a,t_a in params]
 
@@ -310,81 +267,48 @@ def  build_summaries():
 
 
 class DDPG:
-    # def __init__(self,predictor,M,L,N,name,load_weights,trainable):
-    #     # Initial buffer
-    #     self.buffer = list()
-    #     self.buffer_size = 10000
-    #     self.batch_size = 32
-    #     self.name=name
-    #
-    #     #Build up models
-    #     #Session creates an environment
-    #     self.session = tf.Session()
-    #
-    #     self.actor=StockActor(self.session,predictor,M,L,N,self.batch_size)
-    #     self.critic=StockCritic(self.session,predictor,M,L,N)
-    #
-    #
-    #
-    #     #Initial Hyperparameters
-    #     self.gamma=0.99
-    #
-    #     #Initial saver
-    #     self.saver=tf.train.Saver(max_to_keep=10)
-    #
-    #     if load_weights=='True':
-    #         print("Loading Model")
-    #         try:
-    #             checkpoint = tf.train.get_checkpoint_state(self.name)
-    #             if checkpoint and checkpoint.model_checkpoint_path:
-    #                 self.saver.restore(self.session, checkpoint.model_checkpoint_path)
-    #                 print("Successfully loaded:", checkpoint.model_checkpoint_path)
-    #             else:
-    #                 print("Could not find old network weights")
-    #                 self.session.run(tf.global_variables_initializer())
-    #         except:
-    #             print("Could not find old network weights")
-    #             self.session.run(tf.global_variables_initializer())
-    #     else:
-    #         self.session.run(tf.global_variables_initializer())
-    #
-    #     if trainable:
-    #         # Initial summary
-    #         self.summary_writer = tf.compat.v1.summary.FileWriter('./summary/DDPG', self.session.graph)
-    #         self.summary_ops, self.summary_vars = build_summaries()
-
-    #online actor
-
-    def __init__(self, predictor, M, L, N, name, load_weights, trainable):
-        self.buffer = []
+    def __init__(self,predictor,M,L,N,name,load_weights,trainable):
+        # Initial buffer
+        self.buffer = list()
         self.buffer_size = 10000
         self.batch_size = 32
-        self.name = name
+        self.name=name
 
-        # Build models using Keras API
-        self.actor = StockActor(predictor, M, L, N, self.batch_size)
-        self.critic = StockCritic(predictor, M, L, N)
+        #Build up models
+        self.sesson = tf.Session()
+        self.actor=StockActor(self.sesson,predictor,M,L,N,self.batch_size)
+        self.critic=StockCritic(self.sesson,predictor,M,L,N)
 
-        # Initial Hyperparameters
-        self.gamma = 0.99
 
-        # Checkpoint system (instead of tf.train.Saver)
-        self.checkpoint_dir = f'./checkpoints/{self.name}'
-        self.checkpoint = tf.train.Checkpoint(actor=self.actor, critic=self.critic)
 
-        # Load weights if specified
-        if load_weights == 'True':
-            print("Loading Model...")
-            checkpoint_path = tf.train.latest_checkpoint(self.checkpoint_dir)
-            if checkpoint_path:
-                self.checkpoint.restore(checkpoint_path)
-                print("Successfully loaded:", checkpoint_path)
-            else:
-                print("Could not find old network weights. Initializing new model.")
+        #Initial Hyperparameters
+        self.gamma=0.99
 
-        # Summary writer for TensorBoard
+        #Initial saver
+        self.saver=tf.train.Saver(max_to_keep=10)
+
+        if load_weights=='True':
+            print("Loading Model")
+            try:
+                checkpoint = tf.train.get_checkpoint_state(self.name)
+                if checkpoint and checkpoint.model_checkpoint_path:
+                    self.saver.restore(self.sesson, checkpoint.model_checkpoint_path)
+                    print("Successfully loaded:", checkpoint.model_checkpoint_path)
+                else:
+                    print("Could not find old network weights")
+                    self.sesson.run(tf.global_variables_initializer())
+            except:
+                print("Could not find old network weights")
+                self.sesson.run(tf.global_variables_initializer())
+        else:
+            self.sesson.run(tf.global_variables_initializer())
+
         if trainable:
-            self.summary_writer = tf.summary.create_file_writer(f'./summary/DDPG')
+            # Initial summary
+            self.summary_writer = tf.summary.FileWriter('./summary/DDPG', self.sesson.graph)
+            self.summary_ops, self.summary_vars = build_summaries()
+
+    #online actor
     def predict(self,s):
         return self.actor.predict(s)
 
@@ -447,14 +371,13 @@ class DDPG:
 
 
     def save_model(self,epoch):
-        self.saver.save(self.session,'./saved_network/DDPG/'+self.name,global_step=epoch)
+        self.saver.save(self.sesson,'./saved_network/DDPG/'+self.name,global_step=epoch)
 
     def write_summary(self,Loss,reward,ep_ave_max_q,actor_loss,epoch):
-        summary_str = self.session.run(self.summary_ops, feed_dict={
+        summary_str = self.sesson.run(self.summary_ops, feed_dict={
             self.summary_vars[0]: Loss,
             self.summary_vars[1]: reward,
             self.summary_vars[2]: ep_ave_max_q,
             self.summary_vars[3]: actor_loss
         })
         self.summary_writer.add_summary(summary_str, epoch)
-

@@ -6,6 +6,7 @@ Created on Mon Jul 30 05:41:28 2018
 """
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 from math import log
 from datetime import datetime
 import time
@@ -105,34 +106,39 @@ class Environment:
         # return
 
         self.date_len=len(datee)
-
+        print(codes)
         for asset in codes:
-            print(asset)
+            # print(asset)
             # Adding the union of time will produce missing values   pd.to_datetime(self.date_list)
             asset_data=data[data["code"]==asset].reindex(datee).sort_index()
-            print(asset_data)
-
+            # print(asset_data)
+            asset_data['code'] = asset_data['code'].fillna(method='pad')
             asset_data['close'] = asset_data['close'].fillna(method='pad')
             asset_data['date'] = asset_data['date'].fillna(method='pad')
+            asset_data['high'] = asset_data['high'].fillna(method='pad')
             asset_data['open'] = asset_data['high'].fillna(method='pad')
             asset_data['low'] = asset_data['low'].fillna(method='pad')
             asset_data['volume'] = asset_data['volume'].fillna(method='pad')
             asset_data['percent'] = asset_data['percent'].fillna(method='pad')
-            print("Asset Data after close  function : ", asset_data)
+            # print("Asset Data after close  function : ", asset_data)
             data.to_csv('../data/' + 'closeFunction' + '.csv')
 
+            # return
             print("Date without time : ", end_date_without_time)
             #we have used end date here
             # base_price = asset_data.loc[pd.to_datetime('2015-01-05').date(), 'close']
             # Add the base price, generally the last element
-            base_price = 44.95
+            print(data["close"].iloc[2])
+            base_price = data["close"].iloc[2]
+            print("Base Price : ", base_price)
             asset_dict[str(asset)]= asset_data
 
+            # return
             #Divided the close with base price
             asset_dict[str(asset)]['close'] = asset_dict[str(asset)]['close'] / base_price
 
-            print(asset_dict)
 
+            # return
             if 'high' in features:
                 asset_dict[str(asset)]['high'] = asset_dict[str(asset)]['high'] / base_price
 
@@ -169,16 +175,20 @@ class Environment:
             #     base_TR=asset_data.ix[end_date,'TR']
             #     asset_dict[str(asset)]['TR'] = asset_dict[str(asset)]['TR'] / base_TR
 
-            asset_data=asset_data.fillna(method='bfill',axis=1)
-            print("Asset Data after bfill function : ", asset_data)
-
-            asset_data=asset_data.fillna(method='ffill',axis=1) #Fill other values based on the closing price.
-            print("Asset Data after ffill function : ", asset_data)
-            #***********************open as preclose*******************#
-            #asset_data=asset_data.dropna(axis=0,how='any')
+            # return
+            asset_data=asset_data.fillna(method='bfill',axis=0)
+            # print("Asset Data after bfill function : ", asset_data)
+            #
+            asset_data=asset_data.fillna(method='ffill',axis=0) #Fill other values based on the closing price.
+            # print("Asset Data after ffill function : ", asset_data)
+            # #***********************open as preclose*******************#
+            # #asset_data=asset_data.dropna(axis=0,how='any')
             asset_data=asset_data.drop(columns=['code'])
-            print("Asset Data after drop function : ", asset_data)
+            # print("Asset Dataa", asset_data)
             asset_dict[str(asset)]=asset_data
+
+        # print("Asset Dataa", asset_data)
+        # print("Asset Dict: ", asset_dict)
         # return
         #开始生成tensor
         self.states=[]
@@ -196,28 +206,12 @@ class Environment:
             V_TR = np.ones(self.L) if 'TR' in features else None
             V_PE = np.ones(self.L) if 'PE' in features else None
             V_PB = np.ones(self.L) if 'PB' in features else None
-        # while t<self.date_len:
-        #     V_close = np.ones(self.L)
-        #     if 'high' in features:
-        #         V_high=np.ones(self.L)
-        #     if 'open' in features:
-        #         V_open=np.ones(self.L)
-        #     if 'low' in features:
-        #         V_low=np.ones(self.L)
-        #     if 'TV1' in features:
-        #         V_TV1=np.ones(self.L)
-        #     if 'TV2' in features:
-        #         V_TV2=np.ones(self.L)
-        #     if 'DA' in features:
-        #         V_DA=np.ones(self.L)
-        #     if 'TR' in features:
-        #         V_TR=np.ones(self.L)
-        #     if 'PE' in features:
-        #         V_PE=np.ones(self.L)
-        #     if 'PB' in features:
-        #         V_PB=np.ones(self.L)
+
             y = np.ones(1)
+            # return
             for asset in codes:
+                # print("Asset : ", asset)
+                # return
                 asset_data = asset_dict[str(asset)]
                 V_close = np.vstack((V_close, asset_data.iloc[t - self.L - 1:t - 1]['close'].values))
                 if 'high' in features:
@@ -239,41 +233,10 @@ class Environment:
                 if 'PB' in features:
                     V_PB = np.vstack((V_PB, asset_data.iloc[t - self.L - 1:t - 1]['PB'].values))
                 y = np.vstack((y, asset_data.iloc[t]['close'] / asset_data.iloc[t - 1]['close']))
-            # y=np.ones(1)
-            # for asset in codes:
-            #     asset_data=asset_dict[str(asset)]
-            #     V_close = np.vstack((V_close, asset_data.ix[t - self.L - 1:t - 1, 'close']))
-            #     if 'high' in features:
-            #         V_high=np.vstack((V_high,asset_data.ix[t-self.L-1:t-1,'high']))
-            #     if 'low' in features:
-            #         V_low=np.vstack((V_low,asset_data.ix[t-self.L-1:t-1,'low']))
-            #     if 'open' in features:
-            #         V_open=np.vstack((V_open,asset_data.ix[t-self.L-1:t-1,'open']))
-            #     if 'TV1' in features:
-            #         V_TV1 = np.vstack((V_TV1, asset_data.ix[t - self.L - 1:t - 1, 'TV1']))
-            #     if 'TV2' in features:
-            #         V_TV2 = np.vstack((V_TV2, asset_data.ix[t - self.L - 1:t - 1, 'TV2']))
-            #     if 'DA' in features:
-            #         V_DA = np.vstack((V_DA, asset_data.ix[t - self.L - 1:t - 1, 'DA']))
-            #     if 'TR' in features:
-            #         V_TR=np.vstack((V_TR,asset_data.ix[t-self.L-1:t-1,'TR']))
-            #     if 'PE' in features:
-            #         V_PE=np.vstack((V_PE,asset_data.ix[t-self.L-1:t-1,'PE']))
-            #     if 'PB' in features:
-            #         V_PB=np.vstack((V_PB,asset_data.ix[t-self.L-1:t-1,'PB']))
-            #     y=np.vstack((y,asset_data.ix[t,'close']/asset_data.ix[t-1,'close']))
 
             state = V_close
             if 'high' and 'low' and'open' in features:
                 state = np.stack((state, V_high,V_low,V_open), axis=2)
-            # if 'high' in features and V_high is not None:
-            #     state = np.stack((state, V_high), axis=2)
-            # if 'low' in features and V_low is not None:
-            #     print(f"State shape before stack: {state.shape}")
-            #     print(f"V_low shape: {V_low.shape}")
-            #     state = np.stack((state, V_low), axis=2)
-            # if 'open' in features and V_open is not None:
-            #     state = np.stack((state, V_open), axis=2)
             if 'TV1' in features and V_TV1 is not None:
                 state = np.stack((state, V_TV1), axis=2)
             if 'TV2' in features and V_TV2 is not None:
@@ -287,27 +250,8 @@ class Environment:
             if 'PB' in features and V_PB is not None:
                 state = np.stack((state, V_PB), axis=2)
 
-            # state = V_close
-            # if 'high' in features:
-            #     state = np.stack((state,V_high), axis=2)
-            # if 'low' in features:
-            #     state = np.stack((state,V_low), axis=2)
-            # if 'open' in features:
-            #     state = np.stack((state,V_open), axis=2)
-            # if 'TV1' in features:
-            #     state = np.stack((state,V_TV1), axis=2)
-            # if 'TV2' in features:
-            #     state = np.stack((state,V_TV2), axis=2)
-            # if 'DA' in features:
-            #     state = np.stack((state,V_DA), axis=2)
-            # if 'TR' in features:
-            #     state = np.stack((state,V_TR), axis=2)
-            # if 'PE' in features:
-            #     state = np.stack((state,V_PE), axis=2)
-            # if 'PB' in features:
-            #     state = np.stack((state,V_PB), axis=2)
-
             # print(f"State shape before reshape: {state.shape}")
+            # return
             # M is codes +1
             # N is features
             # L is window_length
@@ -316,8 +260,7 @@ class Environment:
             self.price_history.append(y)
             t=t+1
 
-            print("Yo")
-            print(state)
+            # return
         self.reset()
 
 
@@ -325,13 +268,16 @@ class Environment:
         return self.states[self.t]
 
     def step(self,w1,w2):
+        # print("Flag: ",self.FLAG)
+        # print("M:", self.L)
+        # print("N: ", self.M)
         if self.FLAG:
             not_terminal = 1
             price = self.price_history[self.t]
             mu = self.cost * (np.abs(w2[0][1:] - w1[0][1:])).sum()
 
             std = self.states[self.t - 1][0].std(axis=(1, 2)).reshape(-1)
-            w2_std = (w2[0]* std).sum()
+            w2_std = tf.reduce_sum(w2[0] * std)
 
             #adding risk
             gamma=0.00
@@ -351,8 +297,12 @@ class Environment:
             price = np.squeeze(price)
             info = {'reward': reward, 'continue': not_terminal, 'next state': self.states[self.t],
                     'weight vector': w2, 'price': price,'risk':risk}
+            # print("returning info")
+            # print("Continue value: ", not_terminal)
             return info
         else:
+
+            # print("states: ", self.states)
             info = {'reward': 0, 'continue': 1, 'next state': self.states[self.L + 1],
                     'weight vector': np.array([[1] + [0 for i in range(self.M-1)]]),
                     'price': self.price_history[self.L + 1],'risk':0}

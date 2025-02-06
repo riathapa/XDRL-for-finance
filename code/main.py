@@ -14,6 +14,7 @@ import yfinance as yf
 
 import environment
 import ppo
+import ddpgv2
 
 eps=10e-8
 epochs=0
@@ -38,7 +39,9 @@ class StockTrader():
         self.w_history = []
         self.p_history = []
 
+        print("Befoe Ornsteing")
         self.noise = ornstein_uhlenbeck.OrnsteinUhlenbeckActionNoise(mu=np.zeros(M))
+        print("After Ornsteing")
 
     def update_summary(self,loss,r,q_value,actor_loss,w,p):
         self.loss += loss
@@ -48,7 +51,7 @@ class StockTrader():
         self.r_history.append(r)
         self.wealth = self.wealth * math.exp(r)
         self.wealth_history.append(self.wealth)
-        self.w_history.extend([','.join([str(Decimal(str(w0)).quantize(Decimal('0.00'))) for w0 in w.tolist()[0]])])
+        self.w_history.extend([','.join([str(Decimal(str(w0)).quantize(Decimal('0.00'))) for w0 in w.numpy().tolist()[0]])])
         self.p_history.extend([','.join([str(Decimal(str(p0)).quantize(Decimal('0.000'))) for p0 in p.tolist()])])
 
     def write(self,epoch):
@@ -94,13 +97,17 @@ def save_state_actions(filename, states, actions):
 
 def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable):
     info = env.step(None,None)
+
     r,contin,s,w1,p,risk=parse_info(info)
-    contin=1
+    # print("s : ", s)
     states = []
     actions = []
+    i=0
     while contin:
+        print("i : ", i)
+        i=i+1
+        # return
         w2 = agent.predict(s)
-        # print(s.shape,w2.shape)
 
         states.append(s)
         actions.append(w2)
@@ -110,6 +117,7 @@ def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
 
         env_info = env.step(w1, w2)
         r, contin, s_next, w1, p,risk = parse_info(env_info)
+        # print("s_next : ", s_next)
 
         agent.save_transition(s, w2, r-risk, contin, s_next, w1)
         loss, q_value,actor_loss=0,0,0
@@ -130,7 +138,11 @@ def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
 
         stocktrader.update_summary(loss,r,q_value,actor_loss,w2,p)
         s = s_next
-    save_state_actions(f"state_action_recopilation.csv", states, actions)
+
+        if i==200:
+            break
+
+    save_state_actions(f"ria_state_action_recopilation.csv", states, actions)
 
 
 
@@ -176,55 +188,61 @@ def parse_config(config,mode):
     print("Record_flag",record_flag)
     print("Plot_flag",plot_flag)
 
-
     return codes,start_date,end_date,features,agent_config,market,predictor, framework, window_length,noise_flag, record_flag, plot_flag,reload_flag,trainable,method
 
 def session(config,mode):
     import environment
     codes, start_date, end_date, features, agent_config, market,predictor, framework, window_length,noise_flag, record_flag, plot_flag,reload_flag,trainable,method=parse_config(config,mode)
 
-    print("Window length: ",window_length)
 
+    print("Window length: ",window_length)
+    print(type("Window length"))
     print("Market : ", market)
+    print(len(codes)+1)
     env = environment.Environment(start_date, end_date, codes, features, int(window_length), market)
-    print(env)
-    return
+
+    # return
     global M
     M=len(codes)+1
-
+    global agent
     if framework == 'DDPG':
         print("*-----------------Loading DDPG Agent---------------------*")
-        from ddpg import DDPG
-        agent = DDPG(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag,trainable)
+        print(predictor, len(codes), int(window_length), len(features), 'DDPG', reload_flag, trainable)
+        agent = ddpgv2.DDPG(predictor, M, int(window_length), len(features), 'DDPG', reload_flag,trainable)
 
-    # elif framework == 'PPO':
-    #     print("*-----------------Loading PPO Agent---------------------*")
-    #     import ppo
-    #     agent = ppo.PPO(predictor, len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag, trainable)
 
+    elif framework == 'PPO':
+
+        print("*-----------------Loading PPO Agent---------------------*")
+        agent = ppo.PPO(len(codes) + 1, int(window_length), len(features), '-'.join(agent_config), reload_flag,
+                        trainable)
+    print("HERE")
     stocktrader=StockTrader()
 
-    # if mode=='train':
-    #
-    #     print("Training with {:d}".format(epochs))
-    #     for epoch in range(epochs):
-    #         print("Now we are at epoch", epoch)
-    #         traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
-    #
-    #         if record_flag=='True':
-    #             stocktrader.write(epoch)
-    #
-    #         if plot_flag=='True':
-    #             stocktrader.plot_result()
-    #
-    #         stocktrader.print_result(epoch,agent)
-    #         stocktrader.reset()
-    #
-    # elif mode=='test':
-    #     traversal(stocktrader, agent, env, 1, noise_flag,framework,method,trainable)
-    #     stocktrader.write(1)
-    #     stocktrader.plot_result()
-    #     stocktrader.print_result(1, agent)
+    print("Before Train")
+    if mode=='train':
+
+        print("Training with {:d}".format(epochs))
+        for epoch in range(epochs):
+            print("Now we are at epoch", epoch)
+            traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
+
+            if record_flag=='True':
+                stocktrader.write(epoch)
+
+            if plot_flag=='True':
+                stocktrader.plot_result()
+
+            stocktrader.print_result(epoch,agent)
+            stocktrader.reset()
+
+            print("Done with epoch", epoch)
+
+    elif mode=='test':
+        traversal(stocktrader, agent, env, 1, noise_flag,framework,method,trainable)
+        stocktrader.write(1)
+        stocktrader.plot_result()
+        stocktrader.print_result(1, agent)
 
 def build_parser():
     parser = ArgumentParser(description='Provide arguments for training different DDPG or PPO models in Portfolio Management')
@@ -255,18 +273,37 @@ def main():
 
         config=json.load(f)
         if args['mode']=='download':
-
-            stock_data = yf.download("NVDA", start="2023-01-01", end="2023-12-31")  # Replace "AAPL" with desired ticker
+        #
+            stock_data = yf.download("SHOP", start="2015-01-01", end="2017-12-31")  # Replace "AAPL" with desired ticker
             stock_data["percent"] = stock_data["Close"].pct_change() * 100
+
             print(type(stock_data))
-            stock_data.to_csv("../data/stock_data.csv", sep='\t')
+            stock_data.to_csv("../data/stock_data.csv")
             print(stock_data)
+
+            data=pd.read_csv("../data/stock_data.csv")
+
+            #dropping the unwanted columns
+            data = data.iloc[2:].reset_index(drop=True)
+
+            #Renaming the columns to suit the code
+            data = data.rename(columns={"Price": "date", "Close": "close", "High": "high", "Low": "low", "Open": "open", "Volume": "volume"})
+            #Dropping redundant data
+            data = data.dropna()
+
+            #Converting the date column to date time object
+            data['date'] = pd.to_datetime(data['date'])
+
+            print(data['date'].info)
+            print(data)
+
             # from data.download_data import DataDownloader
             # data_downloader=DataDownloader(config)
             # data_downloader.save_data()
 
-        if args['mode']=='sesh':
+        if args['mode']=='train':
             session(config,args['mode'])
+        # session(config, args['mode'])
 
 if __name__=="__main__":
     main()
