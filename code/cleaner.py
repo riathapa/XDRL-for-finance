@@ -11,7 +11,8 @@ def clean_state_action_csv(input_file, output_file, config_file):
     
     # Extract values of M, L, and N from the config
     M = len(config['session']['codes']) + 1  # Number of assets + 1 for cash or risk-free asset
-    L = int(config['session']['agents'][2])  # Look-back window length
+    # L = int(config['session']['agents'][2])  # Look-back window length
+    L = 1  # Look-back window length
     N = len(config['session']['features'])  # Number of features per asset
     
     # Load the CSV file
@@ -33,11 +34,17 @@ def clean_state_action_csv(input_file, output_file, config_file):
     flattened_data = []
     for _, row in df.iterrows():
         action = row['Action'].flatten()
+        print("Action: ", action)
+
         state = row['State'].flatten()
+        print("State: ", state)
+
         flattened_row = np.concatenate((action, state))
+        print("Flattened row: ", flattened_row)
+
         flattened_data.append(flattened_row)
-    
-    # print(flattened_data)
+
+    print("Flattened Data: ",flattened_data)
     
     # Create column names
     # Action columns with asset names
@@ -56,6 +63,7 @@ def clean_state_action_csv(input_file, output_file, config_file):
                 column_name = f'State_{asset_name}_{feature_name}_L{j+1}'
                 state_columns.append(column_name)
     columns = action_columns + state_columns
+    print("Columns: ", columns)
     # print(columns)
     # Create a new DataFrame with the flattened data
     cleaned_df = pd.DataFrame(flattened_data, columns=columns)
@@ -103,16 +111,16 @@ def merge_state_action_results(cleaned_state_action_file, results_file, output_f
 
 
 # Example usage
-input_file = '../state_action_recopilation.csv'
-output_file = '../explainability_data/cleaned_state_action.csv'
+input_file = 'ria_state_action_recopilation_cleaned.csv'
+output_file = 'ria_cleaned_state_action.csv'
 config_file = '../config.json'
 
 clean_state_action_csv(input_file, output_file, config_file)
 
 # Example usage
-cleaned_state_action_file = '../explainability_data/cleaned_state_action.csv'
-results_file = '../result1-49.73244555831117.csv'
-output_file = '../explainability_data/state_action_results.csv'
+cleaned_state_action_file = 'cleaned_state_action.csv'
+results_file = 'result0-101.94242138892282.csv'
+output_file = 'ria_state_action_results.csv'
 config_file = '../config.json'
 
 merge_state_action_results(cleaned_state_action_file, results_file, output_file,config_file)

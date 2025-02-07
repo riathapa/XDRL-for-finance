@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-
+import ast
+import re
 from argparse import ArgumentParser
 import json
 import pandas as pd
@@ -11,10 +12,8 @@ import ornstein_uhlenbeck
 import csv
 import os
 import yfinance as yf
-
-import environment
 import ppo
-import ddpgv2
+import ddpg
 
 eps=10e-8
 epochs=0
@@ -22,6 +21,59 @@ M=0
 
 # Create the necessary directories
 os.makedirs('./saved_network/PPO', exist_ok=True)
+
+global agent
+
+## Function to extract numbers and convert them into a 2D NumPy array
+def extract_tensor_values(tensor_str):
+    """Extracts the numerical array from a tf.Tensor string."""
+    pattern = r"\[\[.*?\]\]"  # Pattern to match [[ ... ]]
+    match = re.search(pattern, tensor_str)
+    return match.group() if match else None  # Return match if found, else None
+
+def process_string(input_str):
+    """Process the input string by keeping only the first four '1.0' values
+    and extracting occurrences of the pattern '[[*]'.
+    """
+    print("Input string: {}".format(input_str))
+    # Find the first occurrence of "1.0 1.0 1.0 1.0"
+    first_part = input_str[:input_str.find("1.0 1.0 1.0 1.0") + len("1.0 1.0 1.0 1.0")]
+
+    # Find where the next part of the array starts (skipping extra 1.0 blocks)
+    remaining_part = input_str[input_str.find("]] [["):]  # Keeping the rest of the content
+    print("Remaining part:", remaining_part)
+    # Combine the cleaned parts
+    output_str = first_part + remaining_part
+    print("output_str:", output_str)
+
+    # Regular expression pattern to match " [[*] "
+    pattern = r"\[\[[^\]]*\]"
+
+    # Find all matches
+    matches = re.findall(pattern, output_str)
+
+    # Convert list to string
+    my_string = " ".join(matches)
+    print("My string:", my_string)
+
+    # Replace standalone "]" with "]]"
+    modified_text = my_string.replace("]", "]]")
+    print("Modified Text: ",modified_text)
+
+    modified_text = modified_text + "]" + "]"
+    print("Modified Text: ", modified_text)
+
+
+    return modified_text
+
+def fixTheCsv():
+    data = pd.read_csv('ria_state_action_recopilation.csv')
+    # Apply the function to the entire column (replace 'your_column_name' with actual column name)
+    data["Action"] = data["Action"].apply(extract_tensor_values)
+
+    data['State'] = data['State'].apply(process_string)
+    data.to_csv('ria_state_action_recopilation_cleaned.csv', index=False)
+    print(data.head())
 
 class StockTrader():
     def __init__(self):
@@ -96,6 +148,7 @@ def save_state_actions(filename, states, actions):
             writer.writerow([state, action])
 
 def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable):
+
     info = env.step(None,None)
 
     r,contin,s,w1,p,risk=parse_info(info)
@@ -144,10 +197,6 @@ def traversal(stocktrader,agent,env,epoch,noise_flag,framework,method,trainable)
 
     save_state_actions(f"ria_state_action_recopilation.csv", states, actions)
 
-
-
-
-
 def parse_config(config,mode):
     codes = config["session"]["codes"]
     start_date = config["session"]["start_date"]
@@ -190,7 +239,8 @@ def parse_config(config,mode):
 
     return codes,start_date,end_date,features,agent_config,market,predictor, framework, window_length,noise_flag, record_flag, plot_flag,reload_flag,trainable,method
 
-def session(config,mode):
+def session(config, mode):
+
     import environment
     codes, start_date, end_date, features, agent_config, market,predictor, framework, window_length,noise_flag, record_flag, plot_flag,reload_flag,trainable,method=parse_config(config,mode)
 
@@ -204,11 +254,10 @@ def session(config,mode):
     # return
     global M
     M=len(codes)+1
-    global agent
     if framework == 'DDPG':
         print("*-----------------Loading DDPG Agent---------------------*")
         print(predictor, len(codes), int(window_length), len(features), 'DDPG', reload_flag, trainable)
-        agent = ddpgv2.DDPG(predictor, M, int(window_length), len(features), 'DDPG', reload_flag,trainable)
+        agent = ddpg.DDPG(predictor, M, int(window_length), len(features), 'DDPG', reload_flag,trainable)
 
 
     elif framework == 'PPO':
@@ -244,12 +293,18 @@ def session(config,mode):
         stocktrader.plot_result()
         stocktrader.print_result(1, agent)
 
+    #To clear the training
+    # agent.clear_training()
+    #Reset the model
+    # agent.reset_model()
+    # fixTheCsv()
+
 def build_parser():
     parser = ArgumentParser(description='Provide arguments for training different DDPG or PPO models in Portfolio Management')
     parser.add_argument("--mode",dest="mode",help="download(China), train, test",metavar="MODE", default="train",required=True)
     parser.add_argument("--model",dest="model",help="DDPG,PPO",metavar="MODEL", default="DDPG",required=False)
+    parser.add_argument("--reset_flag",dest="reset_flag",default=0,required=False)
     return parser
-
 
 def main():
     # start_date = '2015-01-01'  # Change as needed
@@ -301,9 +356,11 @@ def main():
             # data_downloader=DataDownloader(config)
             # data_downloader.save_data()
 
-        if args['mode']=='train':
-            session(config,args['mode'])
-        # session(config, args['mode'])
+        # if args['mode']=='train':
+        #     session(config,args['mode'])
+        session(config, args['mode'])
 
-if __name__=="__main__":
-    main()
+# if __name__=="__main__":
+#     main()
+
+fixTheCsv()
