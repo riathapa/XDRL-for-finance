@@ -26,8 +26,11 @@ class Environment:
         #Original CSV
         # data=pd.read_csv(r'../data/'+market+'.csv', parse_dates=True,dtype=object)
 
+        #MAIN CVS FILE
+        # data=pd.read_csv(r'../data/'+market+ 'Copy' + '.csv', parse_dates=True,dtype=object)
+        # print(data.columns)
 
-        data=pd.read_csv(r'../data/'+market+ 'Copy' + '.csv', parse_dates=True,dtype=object)
+        data=pd.read_csv(r'../data/'+ 'NarcisData' + '.csv', parse_dates=True,dtype=object)
         print(data.columns)
         # data = data.rename(columns={'time':'date'})
         # print(data.columns)

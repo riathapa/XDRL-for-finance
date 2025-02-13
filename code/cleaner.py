@@ -112,15 +112,15 @@ def merge_state_action_results(cleaned_state_action_file, results_file, output_f
 
 # Example usage
 input_file = 'ria_state_action_recopilation_cleaned.csv'
-output_file = 'ria_cleaned_state_action.csv'
+output_file = 'cleaned.csv'
 config_file = '../config.json'
 
-clean_state_action_csv(input_file, output_file, config_file)
+# clean_state_action_csv(input_file, output_file, config_file)
 
 # Example usage
-cleaned_state_action_file = 'cleaned_state_action.csv'
-results_file = 'result0-101.94242138892282.csv'
-output_file = 'ria_state_action_results.csv'
+cleaned_state_action_file = 'cleaned.csv'
+results_file = 'result0-113.05389565906307.csv'
+output_file = 'merged.csv'
 config_file = '../config.json'
 
 merge_state_action_results(cleaned_state_action_file, results_file, output_file,config_file)

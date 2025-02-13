@@ -36,35 +36,28 @@ def process_string(input_str):
     and extracting occurrences of the pattern '[[*]'.
     """
     print("Input string: {}".format(input_str))
+
+    # Use regex to extract the first two arrays
+    match = re.search(r'(\[\[.*?\]\] \[\[.*?\]\])', input_str, re.DOTALL)
+    extracted_string = match.group(1)
+    extracted_string = extracted_string + "]]"
+
+
     # Find the first occurrence of "1.0 1.0 1.0 1.0"
-    first_part = input_str[:input_str.find("1.0 1.0 1.0 1.0") + len("1.0 1.0 1.0 1.0")]
+    first_part = extracted_string[:extracted_string.find("1.0 1.0 1.0 1.0") + len("1.0 1.0 1.0 1.0")]
 
     # Find where the next part of the array starts (skipping extra 1.0 blocks)
-    remaining_part = input_str[input_str.find("]] [["):]  # Keeping the rest of the content
-    print("Remaining part:", remaining_part)
+    remaining_part = extracted_string[extracted_string.find("]] [["):]  # Keeping the rest of the content
+    # print("Remaining part:", remaining_part)
     # Combine the cleaned parts
     output_str = first_part + remaining_part
-    print("output_str:", output_str)
+    # print("output_str:", output_str)
 
-    # Regular expression pattern to match " [[*] "
-    pattern = r"\[\[[^\]]*\]"
+    output_string = re.sub(r"\] \[", "]] [[", output_str)
+    output_string = re.sub(r"\]\]\] \[\[\[", "]] [[", output_string)
+    print(output_string)
 
-    # Find all matches
-    matches = re.findall(pattern, output_str)
-
-    # Convert list to string
-    my_string = " ".join(matches)
-    print("My string:", my_string)
-
-    # Replace standalone "]" with "]]"
-    modified_text = my_string.replace("]", "]]")
-    print("Modified Text: ",modified_text)
-
-    modified_text = modified_text + "]" + "]"
-    print("Modified Text: ", modified_text)
-
-
-    return modified_text
+    return output_string
 
 def fixTheCsv():
     data = pd.read_csv('ria_state_action_recopilation.csv')
@@ -360,7 +353,7 @@ def main():
         #     session(config,args['mode'])
         session(config, args['mode'])
 
-# if __name__=="__main__":
-#     main()
+if __name__=="__main__":
+    main()
 
 fixTheCsv()
