@@ -30,7 +30,9 @@ class Environment:
         # data=pd.read_csv(r'../data/'+market+ 'Copy' + '.csv', parse_dates=True,dtype=object)
         # print(data.columns)
 
-        data=pd.read_csv(r'../data/'+ 'NarcisData' + '.csv', parse_dates=True,dtype=object)
+        # data=pd.read_csv(r'../data/'+ 'OmarData' + '.csv', parse_dates=True,dtype=object)
+        data=pd.read_csv(r'Narcis-New-Data' + '.csv', parse_dates=True,dtype=object)
+        # data=pd.read_csv(r'stock_data' + '.csv', parse_dates=True,dtype=object)
         print(data.columns)
         # data = data.rename(columns={'time':'date'})
         # print(data.columns)
@@ -42,8 +44,8 @@ class Environment:
         # //convert to string
         data["code"]=data["code"].astype(str)
 
-        if market=='China':
-            data["code"]=data["code"].apply(fill_zeros)
+        # if market=='China':
+        #     data["code"]=data["code"].apply(fill_zeros)
 
         #check if the codes in teh csv match the ones present in the config file.
         #.isin returns True and False
@@ -61,17 +63,19 @@ class Environment:
         # start_date = pd.to_datetime('2015-01-05')
         # start_date = [date for date in data.index if date > pd.to_datetime('2015-01-05')][0]
 
-        data.to_csv(r'../data/' + 'changed_market' + '.csv')
+        # data.to_csv(r'../data/' + 'SiylisData' + '.csv')
+        # data.to_csv(r'/Users/mikasa/TA/Poster/modifiedStockData2' + '.csv')
 
 
-        start_date = pd.to_datetime('2015-01-05')
+        start_date = pd.to_datetime(start_date)
         start_date_without_time = start_date.date()
         print("Start Date : ", start_date)
         print("Start Date without time : ", start_date.date())
 
         # end_date = pd.to_datetime("2017-12-29")
         # end_date = [date for date in data.index if date < pd.to_datetime(end_date)][-1]
-        end_date = pd.to_datetime('2017-12-26')
+        # end_date = pd.to_datetime('2017-12-26')
+        end_date = pd.to_datetime(end_date)
         end_date_without_time = end_date.date()
         print("End Date : ", end_date)
         print("End Date : ", end_date.date())

@@ -44,7 +44,8 @@ def process_string(input_str):
 
 
     # Find the first occurrence of "1.0 1.0 1.0 1.0"
-    first_part = extracted_string[:extracted_string.find("1.0 1.0 1.0 1.0") + len("1.0 1.0 1.0 1.0")]
+    # first_part = extracted_string[:extracted_string.find("1.0 1.0 1.0 1.0") + len("1.0 1.0 1.0 1.0")]
+    first_part = extracted_string[:extracted_string.find("1.00000000e+00 1.00000000e+00 1.00000000e+00 1.00000000e+00") + len("1.00000000e+00 1.00000000e+00 1.00000000e+00 1.00000000e+00")]
 
     # Find where the next part of the array starts (skipping extra 1.0 blocks)
     remaining_part = extracted_string[extracted_string.find("]] [["):]  # Keeping the rest of the content

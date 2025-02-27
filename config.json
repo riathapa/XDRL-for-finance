@@ -6,10 +6,10 @@
 		"ktype":"D"
 	},
 	"session":{
-		"start_date":"2015-01-05",
-		"end_date":"2017-01-01",
+		"start_date":"2020-01-01",
+		"end_date":"2021-12-31",
 		"market_types":"America",
-	    "codes":["AAPL", "V", "SNE", "ADBE", "BABA"],
+	    "codes":["BMW.DE", "MBG.DE", "FORD", "GM", "AZO"],
 		"features":["close","high","low","open"],
 		"agents":["CNN","DDPG","5"],
 		"epochs":"1",
